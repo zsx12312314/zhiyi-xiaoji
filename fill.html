@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#E8F2FC">
+<title>知意小记 - 填写</title>
+<link rel="stylesheet" href="tailwind.css">
+<script src="supabase.min.js"></script>
+<script src="qrcode.min.js"></script>
+<style>
+:root{--milk-blue:#E8F2FC;--apricot:#FFF5EB;--bean-red:#F4C2C2;--text-pri:#333;--text-sec:#777}*{-webkit-tap-highlight-color:transparent}body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;color:var(--text-pri);background:var(--milk-blue);min-height:100vh;margin:0;padding:12px}.card{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);padding:16px;margin-bottom:12px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:10px 20px;border-radius:12px;font-weight:500;border:none;cursor:pointer;transition:all .15s}.btn:active{transform:scale(.96)}.btn-primary{background:var(--bean-red);color:#fff}.btn-ghost{background:transparent;color:var(--text-sec)}.input{width:100%;min-height:44px;padding:10px 16px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:inherit;font-family:inherit;color:var(--text-pri);background:#fff;outline:none;box-sizing:border-box}.input:focus{border-color:var(--bean-red);box-shadow:0 0 0 3px rgba(244,194,194,.2)}.checkbox-wrap{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 14px;border-radius:12px;cursor:pointer;user-select:none}.checkbox-wrap.selected{background:var(--milk-blue)}.checkbox-wrap.disabled{opacity:.4;pointer-events:none}.checkbox-custom{width:22px;height:22px;border:2px solid #d1d5db;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}.checkbox-wrap.selected .checkbox-custom{background:var(--bean-red);border-color:var(--bean-red)}.checkbox-custom::after{content:'';display:none;width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);margin-top:-2px}.checkbox-wrap.selected .checkbox-custom::after{display:block}.progress-bar{height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;margin-bottom:16px}.progress-bar-fill{height:100%;background:var(--bean-red);border-radius:2px;transition:width .4s}.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}.status-dot.empty{background:#d1d5db}.status-dot.filled{background:#93c5fd}.collapsible-header{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:12px 8px;cursor:pointer;user-select:none;border-radius:12px}.collapsible-body{overflow:hidden;transition:max-height .35s,opacity .25s}.collapsible-body.collapsed{max-height:0!important;opacity:0}.bottom-bar{position:sticky;bottom:0;background:#fff;padding:12px 0;display:flex;gap:10px}.options-grid{display:grid;grid-template-columns:1fr;gap:4px}@media(min-width:768px){.options-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="app"><div class="text-center py-10"><p class="text-text-sec">加载中...</p></div></div>
+
+<script>
+var _sb = null;
+var SUPABASE_URL = 'https://rfsbnontevxcrsanqjwq.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_b06vs8dv9j8hJuNolUOhPw_4NVVEtI8';
+var formId = new URLSearchParams(window.location.search).get('id') || '';
+
+var FORM_SECTIONS = [{"id":"basic","title":"基础温柔信息","icon":"💝","questions":[{"id":"birthday","title":"1. 生日认知","options":[{"value":"no_fill","label":"不想填写"},{"value":"spring","label":"春季（3-5月）"},{"value":"summer","label":"夏季（6-8月）"},{"value":"autumn","label":"秋季（9-11月）"},{"value":"winter","label":"冬季（12-2月）"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]},{"id":"personality","title":"2. 性格标签","options":[{"value":"slow_warm","label":"慢热内敛"},{"value":"outgoing","label":"活泼外向"},{"value":"gentle","label":"温柔佛系"},{"value":"rational","label":"理性清醒"},{"value":"cute","label":"可爱随性"},{"value":"independent","label":"独立安静"},{"value":"social_anxious","label":"社恐慢熟"},{"value":"optimistic","label":"乐观开朗"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]}]},{"id":"diet","title":"饮食喜好区","icon":"🍽️","questions":[{"id":"fruits","title":"1. 爱吃的水果","options":[{"value":"apple_pear","label":"苹果/梨类"},{"value":"citrus","label":"柑橘橙柚类"},{"value":"berry","label":"草莓/蓝莓浆果"},{"value":"melon","label":"西瓜/甜瓜瓜类"},{"value":"tropical","label":"芒果/榴莲热带果"},{"value":"grape","label":"葡萄提子"},{"value":"banana_dragon","label":"香蕉/火龙果"},{"value":"rarely_fruit","label":"很少吃水果","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"rarely_fruit"},{"id":"snacks","title":"2. 爱吃的零食小吃","options":[{"value":"cake_cookie","label":"蛋糕甜品饼干"},{"value":"chips","label":"膨化薯片"},{"value":"chocolate_candy","label":"巧克力糖果"},{"value":"nuts_dried","label":"坚果果干"},{"value":"spicy_snacks","label":"卤味辣条"},{"value":"dessert_soup","label":"芋圆冰品小吃"},{"value":"rarely_snack","label":"几乎不吃零食","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"rarely_snack"},{"id":"main_food","title":"3. 偏好菜系主食","options":[{"value":"light_home","label":"清淡家常菜"},{"value":"spicy","label":"麻辣重口"},{"value":"sweet_sour","label":"酸甜风味"},{"value":"bbq_fried","label":"烧烤油炸"},{"value":"hotpot_bbq","label":"火锅烤肉"},{"value":"rice_noodle","label":"米面主食"},{"value":"western","label":"西餐简餐"},{"value":"no_picky","label":"完全不挑食","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"no_picky"},{"id":"drinks","title":"4. 常喝饮品","options":[{"value":"water","label":"白开水/温水"},{"value":"milk_tea","label":"奶茶果茶"},{"value":"coffee","label":"咖啡"},{"value":"soda","label":"碳酸饮料"},{"value":"yogurt","label":"牛奶酸奶"},{"value":"tea","label":"绿茶/红茶茶饮"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]},{"id":"disliked_food","title":"5. 不爱吃/忌口食物","options":[{"value":"organs","label":"动物内脏"},{"value":"red_meat","label":"牛羊肉红肉"},{"value":"seafood","label":"海鲜鱼虾"},{"value":"aromatic_veg","label":"葱姜蒜香菜调味菜"},{"value":"bitter_veg","label":"苦瓜、芹菜等特殊蔬菜"},{"value":"dislike_sweet","label":"不喜甜食"},{"value":"resist_spicy","label":"抗拒辛辣"},{"value":"no_raw","label":"不吃生冷生食"},{"value":"no_restriction","label":"无忌口，不挑食物","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"no_restriction"}]},{"id":"sports","title":"运动爱好","icon":"⚽","questions":[{"id":"ball_games","title":"1. 球类运动","options":[{"value":"basketball","label":"篮球"},{"value":"football","label":"足球"},{"value":"badminton","label":"羽毛球"},{"value":"table_tennis","label":"乒乓球"},{"value":"volleyball","label":"排球"},{"value":"tennis","label":"网球"},{"value":"no_ball","label":"不玩球类","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"no_ball"},{"id":"cardio","title":"2. 有氧健身类","options":[{"value":"walking_jogging","label":"散步慢跑"},{"value":"rope_skipping","label":"跳绳"},{"value":"yoga","label":"瑜伽拉伸"},{"value":"swimming","label":"游泳"},{"value":"gym","label":"器械健身"},{"value":"cycling","label":"骑行"},{"value":"rarely_exercise","label":"几乎不运动","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"rarely_exercise"},{"id":"fun_sports","title":"3. 休闲趣味运动","options":[{"value":"dance","label":"跳舞"},{"value":"skateboard","label":"滑板轮滑"},{"value":"hiking","label":"爬山徒步"},{"value":"fishing","label":"钓鱼"},{"value":"camping","label":"飞盘/户外露营"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]}]},{"id":"short_video","title":"短视频平台","icon":"📱","questions":[{"id":"video_apps","title":"1. 日常刷取软件","options":[{"value":"douyin","label":"抖音"},{"value":"kuaishou","label":"快手"},{"value":"bilibili","label":"B站"},{"value":"xiaohongshu","label":"小红书"},{"value":"xigua","label":"西瓜视频"},{"value":"wechat_video","label":"视频号"},{"value":"rarely_video","label":"很少刷短视频","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"rarely_video"},{"id":"video_content","title":"2. 偏爱观看内容类型","options":[{"value":"food_explore","label":"美食探店"},{"value":"game_commentary","label":"游戏解说"},{"value":"film_clips","label":"影视剪辑"},{"value":"funny_daily","label":"搞笑日常"},{"value":"travel","label":"风景旅行"},{"value":"knowledge","label":"知识科普"},{"value":"anime","label":"二次元动漫"},{"value":"fashion_beauty","label":"穿搭美妆"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]}]},{"id":"games","title":"精细化游戏分区","icon":"🎮","questions":[{"id":"moba","title":"1. MOBA竞技类","options":[{"value":"honor_of_kings","label":"王者荣耀"},{"value":"lol","label":"英雄联盟手游/端游"},{"value":"tft","label":"金铲铲之战"},{"value":"onmyoji_arena","label":"决战平安京"},{"value":"dota2","label":"DOTA2"},{"value":"no_moba","label":"不玩MOBA","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"no_moba"},{"id":"shooter","title":"2. 射击竞技类","options":[{"value":"valorant","label":"无畏契约"},{"value":"pubg_mobile","label":"和平精英"},{"value":"crossfire","label":"CF穿越火线"},{"value":"cs2","label":"CS2"},{"value":"apex","label":"Apex英雄"},{"value":"arena_breakout","label":"暗区突围"},{"value":"no_shooter","label":"不玩射击游戏","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"no_shooter"},{"id":"anime_games","title":"3. 二次元养成游戏","options":[{"value":"genshin","label":"原神"},{"value":"star_rail","label":"崩坏：星穹铁道"},{"value":"zzz","label":"绝区零"},{"value":"onmyoji","label":"阴阳师"},{"value":"fgo","label":"FGO"},{"value":"blue_archive","label":"蔚蓝档案"},{"value":"arknights","label":"明日方舟"},{"value":"tower_of_fantasy","label":"幻塔"},{"value":"no_anime_game","label":"不玩二游","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"no_anime_game"},{"id":"casual_games","title":"4. 休闲/单机/网游","options":[{"value":"egg_party","label":"蛋仔派对"},{"value":"identity_v","label":"第五人格"},{"value":"sky","label":"光遇"},{"value":"naraka","label":"永劫无间"},{"value":"it_takes_two","label":"双人成行"},{"value":"dnf","label":"DNF地下城"},{"value":"rarely_game","label":"几乎不玩游戏","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"rarely_game"}]},{"id":"hobbies","title":"休闲日常爱好","icon":"🌸","questions":[{"id":"relax_ways","title":"1. 空闲放松方式","options":[{"value":"music","label":"听歌放空"},{"value":"drama_movie","label":"追剧电影综艺"},{"value":"reading","label":"看书阅读"},{"value":"photography","label":"拍照记录生活"},{"value":"shopping","label":"逛街探店"},{"value":"stay_home","label":"宅家发呆休息"},{"value":"learning","label":"学习提升"},{"value":"art_craft","label":"画画手工创作"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]},{"id":"weather_pref","title":"2. 季节天气偏好","options":[{"value":"sunny","label":"晴天"},{"value":"cloudy","label":"阴天"},{"value":"autumn","label":"秋天"},{"value":"spring","label":"春天"},{"value":"summer","label":"夏天"},{"value":"snowy_winter","label":"下雪冬日"},{"value":"rainy","label":"下雨天"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]},{"id":"aesthetic","title":"3. 审美氛围偏好","options":[{"value":"minimal_clean","label":"极简干净"},{"value":"warm_healing","label":"温暖治愈"},{"value":"niche_premium","label":"小众高级"},{"value":"lively","label":"烟火热闹"},{"value":"quiet_cool","label":"清冷安静"},{"value":"retro","label":"复古风"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]}]},{"id":"personality_traits","title":"性格处事习惯","icon":"🧠","questions":[{"id":"work_style","title":"1. 做事风格","options":[{"value":"planner","label":"提前规划条理清晰"},{"value":"go_with_flow","label":"随性顺其自然"},{"value":"efficient","label":"干脆高效果断"},{"value":"perfectionist","label":"细心追求完美"},{"value":"buddha","label":"佛系不争不抢"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]},{"id":"emotion_traits","title":"2. 情绪特质","options":[{"value":"stable","label":"情绪稳定很少内耗"},{"value":"empathetic","label":"共情细腻心软"},{"value":"self_heal","label":"乐观自愈快"},{"value":"slow_express","label":"慢热不善表达"},{"value":"occasional_low","label":"偶尔低落调整快"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]},{"id":"social_traits","title":"3. 待人特质","options":[{"value":"cold_outside","label":"外冷内热"},{"value":"slow_sincere","label":"慢热真诚专一"},{"value":"easygoing","label":"自来熟好相处"},{"value":"tolerant","label":"包容体谅他人"},{"value":"independent_mind","label":"独立不爱麻烦别人"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]}]},{"id":"compatibility","title":"相处适配偏好","icon":"💞","questions":[{"id":"interaction_mode","title":"1. 喜欢的相处模式","options":[{"value":"quiet_company","label":"安静陪伴，各自忙碌"},{"value":"daily_sharing","label":"日常碎碎念分享"},{"value":"going_out","label":"经常结伴出门"},{"value":"much_alone","label":"需要大量独处空间"},{"value":"keep_distance","label":"保持距离不黏人"},{"value":"banter_type","label":"轻松互怼搞笑型"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]},{"id":"comm_style","title":"2. 舒适沟通方式","options":[{"value":"direct","label":"直接坦率不绕弯"},{"value":"tactful","label":"委婉照顾情绪"},{"value":"concise","label":"简洁高效少废话"},{"value":"casual_chat","label":"随心慢慢闲聊"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]},{"id":"pet_peeves","title":"3. 相处反感小事","options":[{"value":"hate_cold","label":"讨厌敷衍冷淡"},{"value":"hate_rushed","label":"讨厌被催促逼迫"},{"value":"hate_flaky","label":"讨厌失信拖延"},{"value":"hate_noisy","label":"讨厌过度吵闹"},{"value":"hate_forced_social","label":"讨厌强行社交"},{"value":"hate_silent_treatment","label":"讨厌冷战不沟通"},{"value":"no_peeve","label":"基本无雷点","isExclusive":true},{"value":"other","label":"其他","isOther":true,"maxChars":50}],"exclusiveOption":"no_peeve"}]},{"id":"lifestyle","title":"生活小习惯","icon":"🏠","questions":[{"id":"sleep_schedule","title":"1. 作息类型","options":[{"value":"early_bird","label":"早睡早起规律"},{"value":"occasional_late","label":"偶尔熬夜、作息尚可"},{"value":"night_owl","label":"标准熬夜党"},{"value":"random_sleep","label":"作息随缘、不固定"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]},{"id":"life_prefs","title":"2. 生活小偏好","options":[{"value":"ritualistic","label":"喜欢生活有仪式感"},{"value":"organized","label":"爱收纳整理整洁"},{"value":"try_new","label":"喜欢尝试新鲜事物"},{"value":"stable_life","label":"偏爱安稳不变的生活"},{"value":"journaling","label":"习惯记录日常点滴"},{"value":"laid_back","label":"随性懒散、舒服为主"},{"value":"other","label":"其他","isOther":true,"maxChars":50}]}]}];
+
+function $(s){return document.querySelector(s)}
+function escapeHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function nanoid(n){for(var r='',i=0;i<n;i++)r+='abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(36*Math.random())];return r}
+
+// Init Supabase
+if(typeof supabase!=='undefined'){_sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY)}
+
+var formData={};
+var cacheKey='zhiyi_fill_'+formId;
+try{formData=JSON.parse(localStorage.getItem(cacheKey)||'{}')}catch(e){}
+if(!formData._identity)formData._identity={name:'',avatarMode:'none',avatarUrl:'',avatarCartoonId:''};
+
+function saveCache(){localStorage.setItem(cacheKey,JSON.stringify(formData))}
+
+function toggleOption(el,sectionId,qId,value,isExclusive,exclusiveVal){
+  if(el.classList.contains('disabled'))return;
+  if(!formData[sectionId])formData[sectionId]={};
+  if(!formData[sectionId][qId])formData[sectionId][qId]=[];
+  var arr=formData[sectionId][qId];
+  if(isExclusive){arr.length=0;if(!arr.includes(value))arr.push(value)}else{
+    if(exclusiveVal&&arr.includes(exclusiveVal))arr.length=0;
+    var idx=arr.indexOf(value);
+    if(idx>=0)arr.splice(idx,1);else arr.push(value)
+  }
+  saveCache();render();
+}
+
+function setOther(sid,qid,v){if(!formData[sid])formData[sid]={};formData[sid][qid+'_other']=v;saveCache()}
+function toggleSec(id){var b=document.getElementById('body-'+id);if(b)b.classList.toggle('collapsed')}
+
+function render(){
+  var h='',ident=formData._identity||{};
+  h+='<div class="text-center py-4"><h1 class="text-xl font-semibold">喜好收集表</h1><p class="text-text-sec text-sm">请填写以下内容</p></div>';
+  h+='<div class="progress-bar"><div class="progress-bar-fill" id="progress" style="width:0%"></div></div>';
+  h+='<div class="card" style="background:var(--apricot)"><h3 class="font-semibold mb-2">昵称 <span style="color:var(--bean-red);font-size:0.85em">*</span></h3><input type="text" id="ident-name" class="input" placeholder="请输入你的昵称" maxlength="30" value="'+escapeHtml(ident.name||'')+'"></div>';
+  FORM_SECTIONS.forEach(function(sec,si){
+    var sd=formData[sec.id]||{};
+    var hasC=false;
+    var qHtml='';
+    sec.questions.forEach(function(q){
+      var vals=sd[q.id]||[];
+      var oth=sd[q.id+'_other']||'';
+      var ex=q.exclusiveOption;
+      var hasEx=ex&&vals.includes(ex);
+      qHtml+='<div class="mb-3"><p class="text-sm font-medium mb-1">'+escapeHtml(q.title)+' <span class="text-text-sec text-xs">（可多选）</span></p><div class="options-grid">';
+      q.options.forEach(function(o){
+        if(o.isOther)return;
+        var sel=vals.includes(o.value);
+        var dis=hasEx&&!o.isExclusive&&o.value!==ex;
+        if(sel)hasC=true;
+        qHtml+='<div class="checkbox-wrap'+(sel?' selected':'')+(dis?' disabled':'')+'" onclick="toggleOption(this,\''+sec.id+'\',\''+q.id+'\',\''+o.value+'\','+(o.isExclusive||false)+',\''+(ex||'')+'\')" data-value="'+o.value+'"><span class="checkbox-custom"></span><span class="text-sm">'+escapeHtml(o.label)+'</span></div>';
+      });
+      qHtml+='</div>';
+      var oo=q.options.find(function(o){return o.isOther});
+      if(oo){
+        qHtml+='<div class="flex items-center gap-2 mt-1"><span class="text-xs text-text-sec">其他：</span><input type="text" class="input text-sm" placeholder="手动输入（最多'+(oo.maxChars||50)+'字）" maxlength="'+(oo.maxChars||50)+'" value="'+escapeHtml(oth)+'" oninput="setOther(\''+sec.id+'\',\''+q.id+'\',this.value)" style="min-height:32px;padding:4px 8px;flex:1"></div>';
+      }
+      qHtml+='</div>';
+    });
+    if(qHtml){
+      h+='<div class="card"><div class="collapsible-header" onclick="toggleSec(\''+sec.id+'\')"><div class="flex items-center gap-2"><span class="status-dot'+(hasC?' filled':' empty')+'"></span><span class="font-medium text-sm">'+sec.icon+' '+escapeHtml(sec.title)+'</span></div></div><div class="collapsible-body'+(si===0?'':' collapsed')+'" id="body-'+sec.id+'"><div class="pt-2">'+qHtml+'</div></div></div>';
+    }
+  });
+  h+='<div class="bottom-bar"><button class="btn btn-ghost flex-1" onclick="resetForm()">重置</button><button class="btn btn-primary flex-1" id="submit-btn">提交记录</button></div>';
+  document.getElementById('app').innerHTML=h;
+  // Bind
+  var ni=document.getElementById('ident-name');
+  if(ni)ni.addEventListener('input',function(){formData._identity.name=this.value;saveCache()});
+  var sb=document.getElementById('submit-btn');
+  if(sb)sb.addEventListener('click',submitForm);
+  // Progress
+  var total=0,filled=0;
+  if(ident.name){filled++;total++}else total++;
+  FORM_SECTIONS.forEach(function(sec){sec.questions.forEach(function(q){total++;var v=(formData[sec.id]||{})[q.id];if(v&&(Array.isArray(v)?v.length>0:true))filled++})});
+  var pct=total>0?Math.round(filled/total*100):0;
+  var pb=document.getElementById('progress');if(pb)pb.style.width=pct+'%';
+}
+
+function resetForm(){
+  formData={_identity:{name:'',avatarMode:'none',avatarUrl:'',avatarCartoonId:''}};
+  saveCache();render();
+}
+
+async function submitForm(){
+  var name=(formData._identity||{}).name||'';
+  if(!name.trim()){alert('请填写昵称');return}
+  if(!_sb){alert('提交失败：网络未连接');return}
+  var btn=document.getElementById('submit-btn');
+  btn.disabled=true;btn.textContent='提交中...';
+  try{
+    var data={_identity:formData._identity};
+    FORM_SECTIONS.forEach(function(sec){
+      var sd=formData[sec.id]||{};
+      sec.questions.forEach(function(q){
+        var k=sec.id+'_'+q.id;
+        var v=sd[q.id]||[];
+        var o=sd[q.id+'_other'];
+        if(o&&v.includes('other')){var nv=v.slice();nv[nv.indexOf('other')]='other:'+o;data[k]=nv}else data[k]=v;
+      });
+    });
+    await _sb.from('submissions').insert({form_id:formId,submitter_name:name.trim(),data:data,device_fingerprint:'web_'+nanoid(16)});
+    localStorage.removeItem(cacheKey);
+    document.getElementById('app').innerHTML='<div class="text-center py-16"><div class="text-5xl mb-4">🎉</div><h2 class="text-xl font-semibold">提交成功！感谢你的填写</h2></div>';
+  }catch(e){
+    alert('提交失败：'+(e.message||'网络错误'));
+    btn.disabled=false;btn.textContent='提交记录';
+  }
+}
+
+render();
+</script>
+</body>
+</html>
