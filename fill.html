@@ -42,12 +42,62 @@ function toggleOption(el,sectionId,qId,value,isExclusive,exclusiveVal){
   if(!formData[sectionId])formData[sectionId]={};
   if(!formData[sectionId][qId])formData[sectionId][qId]=[];
   var arr=formData[sectionId][qId];
-  if(isExclusive){arr.length=0;if(!arr.includes(value))arr.push(value)}else{
-    if(exclusiveVal&&arr.includes(exclusiveVal))arr.length=0;
+  if(isExclusive){
+    arr.length=0;
+    if(!arr.includes(value))arr.push(value);
+    // Update all checkboxes in this question - disable non-exclusive ones
+    var qBlock=el.closest('.question-block');
+    if(qBlock){
+      qBlock.querySelectorAll('.checkbox-wrap').forEach(function(cb){
+        var v=cb.getAttribute('data-value');
+        if(v===value){cb.classList.add('selected')}else{cb.classList.remove('selected')}
+        cb.classList.toggle('disabled',v!==value);
+      });
+    }
+  }else{
+    if(exclusiveVal&&arr.includes(exclusiveVal)){arr.length=0;el.closest('.question-block').querySelectorAll('.checkbox-wrap').forEach(function(cb){cb.classList.remove('selected','disabled')})}
     var idx=arr.indexOf(value);
-    if(idx>=0)arr.splice(idx,1);else arr.push(value)
+    if(idx>=0)arr.splice(idx,1);else arr.push(value);
+    el.classList.toggle('selected');
+    // Handle exclusive: if exclusive option now selected, disable others
+    if(exclusiveVal&&arr.includes(exclusiveVal)){
+      el.closest('.question-block').querySelectorAll('.checkbox-wrap').forEach(function(cb){
+        var v=cb.getAttribute('data-value');
+        if(v!==exclusiveVal&&!cb.classList.contains('other-wrap'))cb.classList.add('disabled');
+        if(v===exclusiveVal)cb.classList.add('selected');
+      });
+    }
   }
-  saveCache();render();
+  // Update status dot
+  updateStatusDot(sectionId);
+  // Update progress
+  updateProgressBar();
+  saveCache();
+}
+
+function updateStatusDot(sid){
+  var sd=formData[sid]||{};
+  var has=false;
+  FORM_SECTIONS.forEach(function(s){
+    if(s.id!==sid)return;
+    s.questions.forEach(function(q){var v=(formData[s.id]||{})[q.id];if(v&&(Array.isArray(v)?v.length>0:true))has=true});
+  });
+  var cards=document.querySelectorAll('.card');
+  cards.forEach(function(card){
+    var dot=card.querySelector('.status-dot');
+    if(dot&&card.querySelector('.collapsible-body[id=body-'+sid+']')){
+      dot.className='status-dot'+(has?' filled':' empty');
+    }
+  });
+}
+
+function updateProgressBar(){
+  var total=0,filled=0;
+  var ident=formData._identity||{};
+  if(ident.name){filled++;total++}else total++;
+  FORM_SECTIONS.forEach(function(sec){sec.questions.forEach(function(q){total++;var v=(formData[sec.id]||{})[q.id];if(v&&(Array.isArray(v)?v.length>0:true))filled++})});
+  var pct=total>0?Math.round(filled/total*100):0;
+  var pb=document.getElementById('progress');if(pb)pb.style.width=pct+'%';
 }
 
 function setOther(sid,qid,v){if(!formData[sid])formData[sid]={};formData[sid][qid+'_other']=v;saveCache()}
@@ -70,7 +120,7 @@ function render(){
       var oth=sd[q.id+'_other']||'';
       var ex=q.exclusiveOption;
       var hasEx=ex&&vals.includes(ex);
-      qHtml+='<div class="mb-3"><p class="text-sm font-medium mb-1">'+escapeHtml(q.title)+' <span class="text-text-sec text-xs">（可多选）</span></p><div class="options-grid">';
+      qHtml+='<div class="mb-3 question-block"><p class="text-sm font-medium mb-1">'+escapeHtml(q.title)+' <span class="text-text-sec text-xs">（可多选）</span></p><div class="options-grid">';
       q.options.forEach(function(o){
         if(o.isOther)return;
         var sel=vals.includes(o.value);
