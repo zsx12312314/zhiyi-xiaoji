@@ -3011,13 +3011,27 @@ async function renderFormFill(container, params) {
   if (!isPreview && _sb) {
     try {
       const { data, error } = await _sb.from('forms').select('*').eq('id', formId).maybeSingle();
-      if (error) throw error;
-      form = data;
+      if (!error && data) form = data;
     } catch(e) {
-      console.error('Load form error:', e);
-      container.innerHTML = `<div class="text-center py-20"><p class="text-text-sec">表单加载失败：${escapeHtml(e.message||'网络错误')}</p><p class="text-xs text-text-sec mt-2">FormId: ${escapeHtml(formId)}</p><button class="btn btn-primary mt-4" onclick="location.reload()">重试</button></div>`;
-      return;
+      console.warn('Load form from Supabase failed, using defaults:', e.message || e);
     }
+  }
+
+  // 兜底：如果 Supabase 加载失败，用默认表单（全部板块可见）
+  if (!form && !isPreview) {
+    form = {
+      id: formId,
+      title: '喜好收集表',
+      description: '请填写以下内容',
+      section_config: {},
+      access_password_hash: '',
+      expiry_mode: 'permanent',
+      max_submissions: 0,
+      anti_duplicate: false,
+      is_published: true,
+      submission_count: 0
+    };
+    console.log('Using fallback form config');
   }
 
   // 预览模式：构建虚拟表单
