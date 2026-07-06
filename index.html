@@ -3886,13 +3886,123 @@ function showOnboardingGuide() {
 }
 
 // ================================================================
+// 十六点五、访客直接填写（跳过路由和认证）
+// ================================================================
+async function importFillPage(container, formId) {
+  // 立即显示表单，不等任何东西
+  let form = {
+    id: formId, title: '喜好收集表', description: '请填写以下内容（带*为必填）',
+    section_config: {}, is_published: true, max_submissions: 0, submission_count: 0,
+    expiry_mode: 'permanent', access_password_hash: '', anti_duplicate: false,
+    expiry_date: null
+  };
+
+  // 后台尝试加载真实表单配置
+  if (_sb) {
+    try {
+      const { data } = await _sb.from('forms').select('*').eq('id', formId).maybeSingle();
+      if (data) form = data;
+    } catch(e) {}
+  }
+
+  // 渲染表单
+  let formData = {};
+  try { formData = JSON.parse(localStorage.getItem('zhiyi_form_data_' + formId) || '{}'); } catch(e) {}
+  if (!formData._identity) formData._identity = { name: '', avatarMode: 'none', avatarUrl: '', avatarCartoonId: '' };
+  window._fillFormData = formData;
+  window._fillFormId = formId;
+  window._fillForm = form;
+  window.saveFillCache = () => localStorage.setItem('zhiyi_form_data_' + formId, JSON.stringify(window._fillFormData));
+  window.renderFillPageLocal = () => renderFillPageDirect(container, form, formId, window._fillFormData);
+  window.renderFillPageLocal();
+}
+
+function renderFillPageDirect(container, form, formId, formData) {
+  const identity = formData._identity || {};
+  let html = '<div class=\"animate-fade-in\"><div class=\"text-center py-6\"><h1 class=\"text-xl font-semibold text-text-pri\">' + escapeHtml(form.title) + '</h1>' + (form.description ? '<p class=\"text-text-sec text-sm mt-1\">' + escapeHtml(form.description) + '</p>' : '') + '</div><div class=\"progress-bar mb-6\"><div class=\"progress-bar-fill\" id=\"fill-progress\" style=\"width:0%\"></div></div>';
+
+  // 身份卡片
+  html += '<div class=\"card mb-4\" style=\"background:var(--apricot)\"><h3 class=\"font-semibold text-text-pri mb-2\">昵称（必填）</h3><input type=\"text\" id=\"fill-identity-name\" class=\"input\" placeholder=\"请输入你的昵称\" maxlength=\"30\" value=\"' + escapeHtml(identity.name || '') + '\"></div>';
+
+  // 问卷板块
+  FORM_SECTIONS.forEach((section, si) => {
+    const cfg = form.section_config?.[section.id] || {};
+    if (cfg.hidden) return;
+    const sectionData = formData[section.id] || {};
+    const isExpanded = si === 0;
+    let hasContent = false;
+    section.questions.forEach(q => {
+      const val = sectionData[q.id];
+      if (val && (Array.isArray(val) ? val.length > 0 : true)) hasContent = true;
+    });
+    html += '<div class=\"card mb-3\"><div class=\"collapsible-header\" onclick=\"toggleSection(\\'' + section.id + '\\')\"><div class=\"flex items-center gap-2\"><span class=\"status-dot ' + (hasContent ? 'filled' : 'empty') + '\"></span><span class=\"font-medium text-sm text-text-pri\">' + section.icon + ' ' + escapeHtml(section.title) + '</span></div><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"#999\" class=\"section-arrow\" id=\"arrow-' + section.id + '\" style=\"transform:' + (isExpanded ? 'rotate(180deg)' : '') + ';transition:transform 0.3s\"><path d=\"M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z\"/></svg></div><div class=\"collapsible-body' + (isExpanded ? '' : ' collapsed') + '\" id=\"body-' + section.id + '\"><div class=\"pt-2 pb-3 px-1\">';
+    section.questions.forEach(q => {
+      const values = sectionData[q.id] || [];
+      const otherVal = sectionData[q.id + '_other'] || '';
+      const exclusiveVal = q.exclusiveOption;
+      const hasExclusiveSelected = exclusiveVal && values.includes(exclusiveVal);
+      html += '<div class=\"mb-4\"><p class=\"text-sm font-medium text-text-pri mb-2\">' + escapeHtml(q.title) + ' <span class=\"text-text-sec text-xs font-normal\">（可多选）</span></p><div class=\"options-grid\">';
+      q.options.forEach(opt => {
+        if (opt.isOther) return;
+        const isSelected = values.includes(opt.value);
+        const isDisabled = hasExclusiveSelected && !opt.isExclusive && opt.value !== exclusiveVal;
+        html += '<div class=\"checkbox-wrap ' + (isSelected ? 'selected' : '') + ' ' + (isDisabled ? 'disabled' : '') + '\" onclick=\"toggleOption(this,\\'' + section.id + '\\',\\'' + q.id + '\\',\\'' + opt.value + '\\',' + (opt.isExclusive || false) + ',\\'' + (exclusiveVal || '') + '\\')\" data-value=\"' + opt.value + '\"><span class=\"checkbox-custom\"></span><span class=\"text-sm\">' + escapeHtml(opt.label) + '</span></div>';
+      });
+      html += '</div>';
+      const otherOpt = q.options.find(o => o.isOther);
+      if (otherOpt) {
+        html += '<div class=\"mt-2 flex items-center gap-2\"><span class=\"text-xs text-text-sec\">其他：</span><input type=\"text\" class=\"input flex-1 text-sm other-input\" placeholder=\"手动输入（最多' + (otherOpt.maxChars || 50) + '字）\" maxlength=\"' + (otherOpt.maxChars || 50) + '\" value=\"' + escapeHtml(otherVal) + '\" oninput=\"setOtherValue(\\'' + section.id + '\\',\\'' + q.id + '\\',this.value);updateRemaining(this,' + (otherOpt.maxChars || 50) + ')\" style=\"min-height:36px;padding:6px 10px\"><span class=\"text-xs text-text-sec remaining-hint\">' + (otherOpt.maxChars || 50) + '</span></div>';
+      }
+      html += '</div>';
+    });
+    html += '</div></div></div>';
+  });
+
+  html += '<div class=\"bottom-bar\"><button class=\"btn btn-ghost flex-1\" onclick=\"resetForm()\">重置表单</button><button class=\"btn btn-primary flex-1 btn-lg\" id=\"submit-form-btn\">提交记录</button></div></div>';
+  container.innerHTML = html;
+
+  // 绑定事件
+  const nameInput = document.getElementById('fill-identity-name');
+  if (nameInput) nameInput.addEventListener('input', function() { window._fillFormData._identity.name = this.value; window.saveFillCache(); updateProgress(formId); });
+  const submitBtn = document.getElementById('submit-form-btn');
+  if (submitBtn) submitBtn.addEventListener('click', async () => {
+    const ident = window._fillFormData._identity || {};
+    if (!ident.name?.trim()) { showToast('请填写昵称', 'warning'); return; }
+    if (formId.startsWith('preview_') || !_sb) { showToast('已提交！(本地预览)', 'success'); return; }
+    submitBtn.disabled = true; submitBtn.textContent = '提交中...';
+    try {
+      const submitData = { _identity: ident };
+      FORM_SECTIONS.forEach(section => {
+        const sd = window._fillFormData[section.id] || {};
+        section.questions.forEach(q => {
+          const key = section.id + '_' + q.id;
+          const val = sd[q.id] || [];
+          const otherVal = sd[q.id + '_other'];
+          if (otherVal && val.includes('other')) {
+            const idx = val.indexOf('other');
+            if (idx >= 0) { const nv = [...val]; nv[idx] = 'other:' + otherVal; submitData[key] = nv; return; }
+          }
+          submitData[key] = val;
+        });
+      });
+      await _sb.from('submissions').insert({ form_id: formId, submitter_name: ident.name.trim(), data: submitData, device_fingerprint: getDeviceFingerprint() });
+      localStorage.setItem('zhiyi_last_submit_' + formId, Date.now().toString());
+      localStorage.removeItem('zhiyi_form_data_' + formId);
+      showToast('提交成功！', 'success', 4000);
+      container.innerHTML = '<div class=\"min-h-[60vh] flex items-center justify-center\"><div class=\"card w-full max-w-sm text-center py-10\"><div class=\"text-5xl mb-4\">成功</div><h2 class=\"text-xl font-semibold\">提交成功！</h2></div></div>';
+    } catch(e) { showToast('提交失败：' + (e.message || '网络错误'), 'error'); submitBtn.disabled = false; submitBtn.textContent = '提交记录'; }
+  });
+  updateProgress(formId);
+}
+
+// ================================================================
 // 十七、应用初始化
 // ================================================================
 
 function initApp() {
   initSupabase();
 
-  // 注册路由（无登录模式）
+  // 注册路由
   route('/', 'landing');
   route('/dashboard', 'dashboard');
   route('/fill/:formId', 'fill');
@@ -3900,22 +4010,23 @@ function initApp() {
 
   window.addEventListener('hashchange', handleRoute);
 
-  // 访客填写页：跳过认证，直接渲染
-  if (window.location.hash.includes('#/fill/')) {
-    handleRoute();
-    return;
+  // 🔥 访客填写页：最高优先级，跳过一切，直接渲染！
+  const hash = window.location.hash;
+  if (hash.includes('#/fill/')) {
+    const formId = hash.split('#/fill/')[1];
+    if (formId) {
+      // 立即渲染，不等任何异步操作
+      const container = $('#page-content');
+      // 不调用 handleRoute()，直接渲染
+      importFillPage(container, formId);
+      return;
+    }
   }
 
   // 其他页面：自动登录后渲染
   initAuth().then(() => {
     if (!STATE.session) {
-      $('#page-content').innerHTML = `
-        <div class="min-h-[80vh] flex flex-col items-center justify-center animate-fade-in">
-          <svg width="64" height="72" viewBox="0 0 32 40"><use href="#icon-logo"/></svg>
-          <p class="text-text-sec text-sm mt-4">正在连接...</p>
-          <div class="loading-spinner mt-3"></div>
-        </div>
-      `;
+      $('#page-content').innerHTML = '<div class=\"min-h-[80vh] flex flex-col items-center justify-center\"><svg width=\"64\" height=\"72\" viewBox=\"0 0 32 40\"><use href=\"#icon-logo\"/></svg><p class=\"text-text-sec text-sm mt-4\">正在连接...</p><div class=\"loading-spinner mt-3\"></div></div>';
     }
   });
 
