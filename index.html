@@ -2420,7 +2420,7 @@ async function showShareModal(form) {
   let baseUrl = PUBLIC_URL;
   let shareHint = '';
 
-  const shareUrl = `${baseUrl}#/fill/${form.id}`;
+  const shareUrl = `${baseUrl}fill.html?id=${form.id}`;
   const hasPassword = !!form.access_password_hash;
 
   showModal('分享收集链接', `
@@ -4002,7 +4002,6 @@ function renderFillPageDirect(container, form, formId, formData) {
 function initApp() {
   initSupabase();
 
-  // 注册路由
   route('/', 'landing');
   route('/dashboard', 'dashboard');
   route('/fill/:formId', 'fill');
@@ -4010,23 +4009,9 @@ function initApp() {
 
   window.addEventListener('hashchange', handleRoute);
 
-  // 🔥 访客填写页：最高优先级，跳过一切，直接渲染！
-  const hash = window.location.hash;
-  if (hash.includes('#/fill/')) {
-    const formId = hash.split('#/fill/')[1];
-    if (formId) {
-      // 立即渲染，不等任何异步操作
-      const container = $('#page-content');
-      // 不调用 handleRoute()，直接渲染
-      importFillPage(container, formId);
-      return;
-    }
-  }
-
-  // 其他页面：自动登录后渲染
   initAuth().then(() => {
     if (!STATE.session) {
-      $('#page-content').innerHTML = '<div class=\"min-h-[80vh] flex flex-col items-center justify-center\"><svg width=\"64\" height=\"72\" viewBox=\"0 0 32 40\"><use href=\"#icon-logo\"/></svg><p class=\"text-text-sec text-sm mt-4\">正在连接...</p><div class=\"loading-spinner mt-3\"></div></div>';
+      $('#page-content').innerHTML = '<div class="min-h-[80vh] flex flex-col items-center justify-center animate-fade-in"><svg width="64" height="72" viewBox="0 0 32 40"><use href="#icon-logo"/></svg><p class="text-text-sec text-sm mt-4">正在连接...</p><div class="loading-spinner mt-3"></div></div>';
     }
   });
 
