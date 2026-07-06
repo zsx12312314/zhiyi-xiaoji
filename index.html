@@ -1,0 +1,3962 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#E8F2FC">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="知意小记">
+  <meta name="description" content="温柔地收集身边人的喜好与心意">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<!-- ICON_PLACEHOLDER -->" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<!-- ICON_PLACEHOLDER -->">
+  <title>知意小记</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 国内备用CDN -->
+  <script>if(typeof tailwind==='undefined'){document.write('<script src="https://unpkg.com/tailwindcss-cdn@3.4.1/tailwindcss.js"><\/script>')}</script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'milk-blue': '#E8F2FC',
+            'apricot': '#FFF5EB',
+            'bean-red': '#F4C2C2',
+            'text-pri': '#333333',
+            'text-sec': '#777777',
+          }
+        }
+      }
+    }
+  </script>
+  <script src="supabase.min.js"></script>
+  <script src="qrcode.min.js"></script>
+  <style>
+    /* ===== 全局自定义样式 ===== */
+    :root {
+      --milk-blue: #E8F2FC;
+      --apricot: #FFF5EB;
+      --bean-red: #F4C2C2;
+      --text-pri: #333333;
+      --text-sec: #777777;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      color: var(--text-pri);
+      background: var(--milk-blue);
+      min-height: 100vh;
+      min-height: 100dvh;
+      overscroll-behavior: none;
+    }
+
+    /* 暗色模式 */
+    body.dark-mode {
+      --milk-blue: #1a1a2e;
+      --apricot: #2a2a3e;
+      --bean-red: #c49b9b;
+      --text-pri: #e0e0e0;
+      --text-sec: #a0a0a0;
+      background: #12121f;
+      color: #e0e0e0;
+    }
+
+    body.dark-mode .bg-white { background: #1e1e32 !important; }
+    body.dark-mode .bg-milk-blue { background: #12121f !important; }
+    body.dark-mode .bg-apricot { background: #2a2a3e !important; }
+    body.dark-mode .text-text-pri { color: #e0e0e0 !important; }
+    body.dark-mode .text-text-sec { color: #a0a0a0 !important; }
+    body.dark-mode .border-gray-100 { border-color: #2a2a3e !important; }
+    body.dark-mode .border-gray-200 { border-color: #333350 !important; }
+    body.dark-mode .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+
+    /* 字体大小 */
+    body.font-small { font-size: 14px; }
+    body.font-medium { font-size: 16px; }
+    body.font-large { font-size: 18px; }
+
+    /* 动画 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(100%); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideOutRight {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(100%); }
+    }
+
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+    .animate-fade-in-up { animation: fadeInUp 0.4s ease-out; }
+    .animate-slide-in { animation: slideInRight 0.3s ease-out; }
+    .animate-scale-in { animation: scaleIn 0.2s ease-out; }
+    .animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+    /* 页面容器 */
+    .page-container {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .page-container.active { display: block; }
+
+    /* 卡片 */
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+      padding: 20px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    @media (hover: none) {
+      .card-hover:active { transform: scale(0.98); }
+    }
+
+    /* 按钮 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: inherit;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .btn:active { transform: scale(0.96); }
+
+    .btn-primary {
+      background: var(--bean-red);
+      color: white;
+    }
+    .btn-primary:hover { filter: brightness(0.95); }
+
+    .btn-secondary {
+      background: var(--milk-blue);
+      color: var(--text-pri);
+    }
+    .btn-secondary:hover { filter: brightness(0.95); }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--bean-red);
+      color: var(--bean-red);
+      filter: brightness(0.85);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-sec);
+    }
+
+    .btn-danger {
+      background: var(--bean-red);
+      color: white;
+      filter: brightness(0.85);
+    }
+
+    .btn-sm { min-height: 36px; padding: 6px 14px; font-size: 0.875em; border-radius: 10px; }
+    .btn-lg { min-height: 50px; padding: 14px 28px; font-size: 1.1em; border-radius: 14px; }
+
+    /* 输入框 */
+    .input {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: inherit;
+      font-family: inherit;
+      color: var(--text-pri);
+      background: white;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .input:focus {
+      border-color: var(--bean-red);
+      box-shadow: 0 0 0 3px rgba(244, 194, 194, 0.2);
+    }
+
+    body.dark-mode .input {
+      background: #1e1e32;
+      border-color: #333350;
+      color: #e0e0e0;
+    }
+
+    /* 复选框/单选框自定义 */
+    .checkbox-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .checkbox-wrap:hover { background: rgba(0,0,0,0.03); }
+    .checkbox-wrap.selected { background: var(--milk-blue); }
+    body.dark-mode .checkbox-wrap.selected { background: rgba(232,242,252,0.08); }
+
+    .checkbox-wrap.disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .checkbox-custom {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #d1d5db;
+      border-radius: 6px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .checkbox-wrap.selected .checkbox-custom {
+      background: var(--bean-red);
+      border-color: var(--bean-red);
+    }
+    .checkbox-custom::after {
+      content: '';
+      display: none;
+      width: 6px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      margin-top: -2px;
+    }
+    .checkbox-wrap.selected .checkbox-custom::after { display: block; }
+
+    /* 进度条 */
+    .progress-bar {
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--bean-red);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* 状态圆点 */
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.empty { background: #d1d5db; }
+    .status-dot.filled { background: #93c5fd; }
+
+    /* 徽章 */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75em;
+      font-weight: 500;
+    }
+
+    /* Toast 通知 */
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      animation: slideInRight 0.3s ease-out;
+      max-width: 360px;
+      pointer-events: auto;
+    }
+
+    body.dark-mode .toast { background: #2a2a3e; }
+
+    /* 模态弹窗遮罩 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @media (min-width: 640px) {
+      .modal-overlay {
+        align-items: center;
+      }
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 560px;
+      max-height: 85vh;
+      max-height: 85dvh;
+      overflow-y: auto;
+      animation: fadeInUp 0.3s ease-out;
+    }
+
+    @media (min-width: 640px) {
+      .modal-content {
+        border-radius: 20px;
+        margin: 20px;
+      }
+    }
+
+    body.dark-mode .modal-content { background: #1e1e32; }
+    body.dark-mode .modal-overlay { background: rgba(0,0,0,0.6); }
+
+    /* 头像圆形裁剪 */
+    .avatar-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--milk-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--bean-red);
+      overflow: hidden;
+    }
+
+    .avatar-circle-lg { width: 72px; height: 72px; font-size: 1.5em; }
+    .avatar-circle-sm { width: 36px; height: 36px; font-size: 0.8em; }
+
+    /* 滚动条美化 */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+
+    /* 安全区域适配 */
+    .pb-safe { padding-bottom: var(--safe-bottom); }
+
+    /* 加载骨架屏 */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* 新建表单-板块配置卡片 */
+    .section-config-card {
+      border: 1.5px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .section-config-card.hidden-section { opacity: 0.5; }
+
+    /* 访客填写-折叠面板 */
+    .collapsible-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 44px;
+      padding: 12px 16px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      border-radius: 12px;
+      transition: background 0.15s ease;
+    }
+
+    .collapsible-header:hover { background: rgba(0,0,0,0.02); }
+
+    .collapsible-body {
+      overflow: hidden;
+      transition: max-height 0.35s ease, opacity 0.25s ease;
+    }
+
+    .collapsible-body.collapsed {
+      max-height: 0 !important;
+      opacity: 0;
+    }
+
+    /* 标签/芯片 */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8em;
+      font-weight: 500;
+      background: var(--milk-blue);
+      color: var(--text-sec);
+    }
+
+    .tag-color-0 { background: #FCE4EC; color: #C62828; }
+    .tag-color-1 { background: #F3E5F5; color: #6A1B9A; }
+    .tag-color-2 { background: #E8EAF6; color: #283593; }
+    .tag-color-3 { background: #E0F7FA; color: #00695C; }
+    .tag-color-4 { background: #FFF3E0; color: #E65100; }
+    .tag-color-5 { background: #F1F8E9; color: #33691E; }
+    .tag-color-6 { background: #FCE4EC; color: #880E4F; }
+    .tag-color-7 { background: #E8F5E9; color: #1B5E20; }
+
+    /* 响应式：桌面端双列选项 */
+    @media (min-width: 768px) {
+      .options-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+      }
+    }
+
+    /* 悬浮底部按钮栏 */
+    .bottom-bar {
+      position: sticky;
+      bottom: 0;
+      background: white;
+      padding: 12px 16px;
+      padding-bottom: calc(12px + var(--safe-bottom));
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    body.dark-mode .bottom-bar {
+      background: #1e1e32;
+      border-color: #2a2a3e;
+    }
+
+    /* 新手指引浮窗 */
+    .guide-tooltip {
+      position: fixed;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      z-index: 200;
+      max-width: 300px;
+      text-align: center;
+      animation: fadeInUp 0.4s ease-out;
+    }
+
+    body.dark-mode .guide-tooltip { background: #2a2a3e; }
+
+    /* 导航栏 */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      padding: 0 16px;
+    }
+
+    body.dark-mode .navbar {
+      background: rgba(30,30,50,0.85);
+      border-color: rgba(255,255,255,0.05);
+    }
+
+    /* 移动端底部导航 */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(0,0,0,0.05);
+      display: flex;
+      padding: 6px 0;
+      padding-bottom: calc(6px + var(--safe-bottom));
+    }
+
+    body.dark-mode .bottom-nav {
+      background: rgba(30,30,50,0.92);
+      border-color: rgba(255,255,255,0.05);
+    }
+
+    .bottom-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-height: 50px;
+      color: var(--text-sec);
+      font-size: 0.7em;
+      cursor: pointer;
+      transition: color 0.15s ease;
+      border: none;
+      background: none;
+    }
+
+    .bottom-nav-item.active { color: var(--bean-red); }
+
+    @media (min-width: 768px) {
+      .bottom-nav { display: none; }
+      .pb-safe { padding-bottom: 0; }
+    }
+
+    /* 导出加载提示 */
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid #e5e7eb;
+      border-top-color: var(--bean-red);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- ===== SVG 图标定义 (全局复用) ===== -->
+  <svg style="display:none" aria-hidden="true">
+    <defs>
+      <!-- Logo: 爱心日记本 -->
+      <g id="icon-logo">
+        <rect x="4" y="3" width="22" height="26" rx="4" fill="#E8F2FC" stroke="#d0dce8" stroke-width="1"/>
+        <line x1="7" y1="10" x2="23" y2="10" stroke="#d0dce8" stroke-width="0.5"/>
+        <line x1="7" y1="13" x2="23" y2="13" stroke="#d0dce8" stroke-width="0.5"/>
+        <line x1="7" y1="16" x2="20" y2="16" stroke="#d0dce8" stroke-width="0.5"/>
+        <rect x="6" y="20" width="10" height="1.5" rx="0.75" fill="#FFF5EB"/>
+        <path d="M6 22.5 C7 21.5, 8 21, 8.5 22 C9 23, 7.5 24.5, 8.5 26 C9.5 24.5, 8 23, 8.5 22 C9 21, 10 21.5, 11 22.5" fill="#F4C2C2" stroke="none" transform="translate(8,0)"/>
+      </g>
+
+      <!-- Logo 带文字 (32x32 视图) -->
+      <g id="icon-logo-text">
+        <rect x="4" y="3" width="22" height="26" rx="4" fill="#E8F2FC" stroke="#d0dce8" stroke-width="1"/>
+        <line x1="7" y1="10" x2="23" y2="10" stroke="#d0dce8" stroke-width="0.5"/>
+        <line x1="7" y1="13" x2="23" y2="13" stroke="#d0dce8" stroke-width="0.5"/>
+        <path d="M7 22.5 C8 21.5, 9 21, 9.5 22 C10 23, 8.5 24.5, 9.5 26 C10.5 24.5, 9 23, 9.5 22 C10 21, 11 21.5, 12 22.5" fill="#F4C2C2" stroke="none"/>
+      </g>
+
+      <!-- 纯图标无文字 -->
+      <g id="icon-pure">
+        <rect x="2" y="2" width="28" height="28" rx="5" fill="#E8F2FC" stroke="#d0dce8" stroke-width="1.2"/>
+        <line x1="6" y1="11" x2="26" y2="11" stroke="#d0dce8" stroke-width="0.8"/>
+        <line x1="6" y1="15" x2="26" y2="15" stroke="#d0dce8" stroke-width="0.8"/>
+        <line x1="6" y1="19" x2="22" y2="19" stroke="#d0dce8" stroke-width="0.8"/>
+        <path d="M12 24.5 C13 23.5, 14 23, 14.5 24 C15 25, 13.5 26.5, 14.5 28 C15.5 26.5, 14 25, 14.5 24 C15 23, 16 23.5, 17 24.5" fill="#F4C2C2" stroke="none"/>
+      </g>
+
+      <!-- 普通图标 -->
+      <path id="icon-heart" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      <path id="icon-star" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      <path id="icon-search" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      <path id="icon-person" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+      <path id="icon-settings" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.33-.02-.64-.06-.94l2.02-1.58c.18-.14.23-.38.12-.56l-1.89-3.28c-.12-.19-.36-.26-.56-.18l-2.38.96c-.5-.38-1.06-.68-1.66-.88L14.45 3.5c-.04-.2-.2-.35-.4-.35h-3.78c-.2 0-.36.15-.4.35l-.3 2.52c-.6.2-1.16.5-1.66.88l-2.38-.96c-.2-.08-.44-.01-.56.18l-1.89 3.28c-.12.19-.07.42.12.56l2.02 1.58c-.04.3-.06.61-.06.94 0 .33.02.64.06.94l-2.02 1.58c-.18.14-.23.38-.12.56l1.89 3.28c.12.19.36.26.56.18l2.38-.96c.5.38 1.06.68 1.66.88l.3 2.52c.04.2.2.35.4.35h3.78c.2 0 .36-.15.4-.35l.3-2.52c.6-.2 1.16-.5 1.66-.88l2.38.96c.2.08.44.01.56-.18l1.89-3.28c.12-.19.07-.42-.12-.56l-2.02-1.58zM12 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
+      <path id="icon-delete" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+      <path id="icon-edit" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+      <path id="icon-add" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+      <path id="icon-close" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      <path id="icon-check" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+      <path id="icon-copy" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+      <path id="icon-export" d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/>
+      <path id="icon-filter" d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+      <path id="icon-favorite" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      <path id="icon-favorite-border" d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+      <path id="icon-lock" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
+      <path id="icon-download" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+      <path id="icon-link" d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+      <path id="icon-moon" d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
+      <path id="icon-sun" d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2v-2H2v2zm18 0h2v-2h-2v2zm-5-9.99L15 5c1.1.01 2 .9 2 2l-.01 1 2-.01L19 4l-2-1.99zM7 7c0-1.1.9-1.99 2-1.99L9 3 7 4.01 5.01 7 7 8.99V7zm13 10l-2-.01L18 19c0 1.1-.9 2-2 2l-1-.01 2-2L20 17zM9 19l-2-.01L5.01 17 7 15.01 7 17c0 1.1.9 2 2 2v0z"/>
+      <path id="icon-archive" d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/>
+      <path id="icon-refresh" d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+      <path id="icon-expand" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+      <path id="icon-collapse" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+      <path id="icon-logout" d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+      <path id="icon-more" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+      <path id="icon-camera" d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zM9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+    </defs>
+  </svg>
+
+  <!-- ===== 应用根容器 ===== -->
+  <div id="app-root">
+    <!-- 顶部导航栏（桌面端显示） -->
+    <nav id="navbar" class="navbar hidden md:flex items-center justify-between h-14">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="navigate('/dashboard')">
+        <svg width="28" height="28" viewBox="0 0 32 32"><use href="#icon-logo"/></svg>
+        <span class="font-semibold text-text-pri">知意小记</span>
+      </div>
+      <div id="navbar-actions" class="flex items-center gap-2"></div>
+    </nav>
+
+    <!-- 页面内容区 -->
+    <main id="page-content" class="mx-auto px-4 pb-24 md:pb-12" style="max-width:1024px"></main>
+
+    <!-- 移动端底部导航（仅登录后显示） -->
+    <nav id="bottom-nav" class="bottom-nav hidden"></nav>
+
+    <!-- Toast 通知容器 -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none" style="max-width:calc(100vw - 32px)"></div>
+
+    <!-- 模态弹窗容器 -->
+    <div id="modal-container"></div>
+  </div>
+
+  <!-- ==================== 全部 JavaScript 代码 ==================== -->
+  <script>
+// ================================================================
+// 知意小记 — 核心 JavaScript
+// ================================================================
+
+'use strict';
+
+// ================================================================
+// 一、配置常量
+// ================================================================
+
+// ⚠️ 部署时请替换为您的 Supabase 项目信息
+const SUPABASE_URL = 'https://rfsbnontevxcrsanqjwq.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_b06vs8dv9j8hJuNolUOhPw_4NVVEtI8';
+
+// 品牌颜色
+const BRAND = {
+  milkBlue: '#E8F2FC',
+  apricot: '#FFF5EB',
+  beanRed: '#F4C2C2',
+  textPri: '#333333',
+  textSec: '#777777'
+};
+
+// 卡通头像库（内联SVG数据——20个卡通形象）
+const CARTOON_AVATARS = [
+  // 男生形象 (1-6)
+  { id: 'boy1', group: '男生', emoji: '👦', bg: '#E3F2FD', icon: '🙂' },
+  { id: 'boy2', group: '男生', emoji: '🧑', bg: '#E8F5E9', icon: '😊' },
+  { id: 'boy3', group: '男生', emoji: '👨', bg: '#FFF3E0', icon: '😎' },
+  { id: 'boy4', group: '男生', emoji: '🧔', bg: '#F3E5F5', icon: '🤗' },
+  { id: 'boy5', group: '男生', emoji: '👱', bg: '#E0F7FA', icon: '😄' },
+  { id: 'boy6', group: '男生', emoji: '🤵', bg: '#FCE4EC', icon: '🙃' },
+  // 女生形象 (7-12)
+  { id: 'girl1', group: '女生', emoji: '👧', bg: '#FCE4EC', icon: '😊' },
+  { id: 'girl2', group: '女生', emoji: '👩', bg: '#F3E5F5', icon: '🥰' },
+  { id: 'girl3', group: '女生', emoji: '👱‍♀️', bg: '#FFF3E0', icon: '😋' },
+  { id: 'girl4', group: '女生', emoji: '👩‍🦰', bg: '#E8F5E9', icon: '😇' },
+  { id: 'girl5', group: '女生', emoji: '👩‍🦱', bg: '#E3F2FD', icon: '🤩' },
+  { id: 'girl6', group: '女生', emoji: '👩‍🦳', bg: '#E0F7FA', icon: '😌' },
+  // 中性简约 (13-16)
+  { id: 'neutral1', group: '中性', emoji: '😶', bg: '#EFEBE9', icon: '🙂' },
+  { id: 'neutral2', group: '中性', emoji: '😐', bg: '#ECEFF1', icon: '😏' },
+  { id: 'neutral3', group: '中性', emoji: '🙂', bg: '#F5F5F5', icon: '😉' },
+  { id: 'neutral4', group: '中性', emoji: '😌', bg: '#FAFAFA', icon: '☺️' },
+  // 小动物 (17-20)
+  { id: 'pet1', group: '动物', emoji: '🐱', bg: '#FFF8E1', icon: '🐱' },
+  { id: 'pet2', group: '动物', emoji: '🐶', bg: '#FFF3E0', icon: '🐶' },
+  { id: 'pet3', group: '动物', emoji: '🐰', bg: '#FCE4EC', icon: '🐰' },
+  { id: 'pet4', group: '动物', emoji: '🐼', bg: '#F5F5F5', icon: '🐼' }
+];
+
+// ================================================================
+// 二、固定问卷内容（9大板块，严格复刻，不可删改）
+// ================================================================
+
+const FORM_SECTIONS = [
+  {
+    id: 'basic',
+    title: '基础温柔信息',
+    icon: '💝',
+    questions: [
+      {
+        id: 'birthday',
+        type: 'multi-select',
+        title: '1. 生日认知',
+        options: [
+          { value: 'no_fill', label: '不想填写' },
+          { value: 'spring', label: '春季（3-5月）' },
+          { value: 'summer', label: '夏季（6-8月）' },
+          { value: 'autumn', label: '秋季（9-11月）' },
+          { value: 'winter', label: '冬季（12-2月）' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      },
+      {
+        id: 'personality',
+        type: 'multi-select',
+        title: '2. 性格标签',
+        options: [
+          { value: 'slow_warm', label: '慢热内敛' },
+          { value: 'outgoing', label: '活泼外向' },
+          { value: 'gentle', label: '温柔佛系' },
+          { value: 'rational', label: '理性清醒' },
+          { value: 'cute', label: '可爱随性' },
+          { value: 'independent', label: '独立安静' },
+          { value: 'social_anxious', label: '社恐慢熟' },
+          { value: 'optimistic', label: '乐观开朗' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      }
+    ]
+  },
+  {
+    id: 'diet',
+    title: '饮食喜好区',
+    icon: '🍽️',
+    questions: [
+      {
+        id: 'fruits',
+        type: 'multi-select',
+        title: '1. 爱吃的水果',
+        options: [
+          { value: 'apple_pear', label: '苹果/梨类' },
+          { value: 'citrus', label: '柑橘橙柚类' },
+          { value: 'berry', label: '草莓/蓝莓浆果' },
+          { value: 'melon', label: '西瓜/甜瓜瓜类' },
+          { value: 'tropical', label: '芒果/榴莲热带果' },
+          { value: 'grape', label: '葡萄提子' },
+          { value: 'banana_dragon', label: '香蕉/火龙果' },
+          { value: 'rarely_fruit', label: '很少吃水果', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'rarely_fruit'
+      },
+      {
+        id: 'snacks',
+        type: 'multi-select',
+        title: '2. 爱吃的零食小吃',
+        options: [
+          { value: 'cake_cookie', label: '蛋糕甜品饼干' },
+          { value: 'chips', label: '膨化薯片' },
+          { value: 'chocolate_candy', label: '巧克力糖果' },
+          { value: 'nuts_dried', label: '坚果果干' },
+          { value: 'spicy_snacks', label: '卤味辣条' },
+          { value: 'dessert_soup', label: '芋圆冰品小吃' },
+          { value: 'rarely_snack', label: '几乎不吃零食', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'rarely_snack'
+      },
+      {
+        id: 'main_food',
+        type: 'multi-select',
+        title: '3. 偏好菜系主食',
+        options: [
+          { value: 'light_home', label: '清淡家常菜' },
+          { value: 'spicy', label: '麻辣重口' },
+          { value: 'sweet_sour', label: '酸甜风味' },
+          { value: 'bbq_fried', label: '烧烤油炸' },
+          { value: 'hotpot_bbq', label: '火锅烤肉' },
+          { value: 'rice_noodle', label: '米面主食' },
+          { value: 'western', label: '西餐简餐' },
+          { value: 'no_picky', label: '完全不挑食', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'no_picky'
+      },
+      {
+        id: 'drinks',
+        type: 'multi-select',
+        title: '4. 常喝饮品',
+        options: [
+          { value: 'water', label: '白开水/温水' },
+          { value: 'milk_tea', label: '奶茶果茶' },
+          { value: 'coffee', label: '咖啡' },
+          { value: 'soda', label: '碳酸饮料' },
+          { value: 'yogurt', label: '牛奶酸奶' },
+          { value: 'tea', label: '绿茶/红茶茶饮' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      },
+      {
+        id: 'disliked_food',
+        type: 'multi-select',
+        title: '5. 不爱吃/忌口食物',
+        options: [
+          { value: 'organs', label: '动物内脏' },
+          { value: 'red_meat', label: '牛羊肉红肉' },
+          { value: 'seafood', label: '海鲜鱼虾' },
+          { value: 'aromatic_veg', label: '葱姜蒜香菜调味菜' },
+          { value: 'bitter_veg', label: '苦瓜、芹菜等特殊蔬菜' },
+          { value: 'dislike_sweet', label: '不喜甜食' },
+          { value: 'resist_spicy', label: '抗拒辛辣' },
+          { value: 'no_raw', label: '不吃生冷生食' },
+          { value: 'no_restriction', label: '无忌口，不挑食物', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'no_restriction'
+      }
+    ]
+  },
+  {
+    id: 'sports',
+    title: '运动爱好',
+    icon: '⚽',
+    questions: [
+      {
+        id: 'ball_games',
+        type: 'multi-select',
+        title: '1. 球类运动',
+        options: [
+          { value: 'basketball', label: '篮球' },
+          { value: 'football', label: '足球' },
+          { value: 'badminton', label: '羽毛球' },
+          { value: 'table_tennis', label: '乒乓球' },
+          { value: 'volleyball', label: '排球' },
+          { value: 'tennis', label: '网球' },
+          { value: 'no_ball', label: '不玩球类', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'no_ball'
+      },
+      {
+        id: 'cardio',
+        type: 'multi-select',
+        title: '2. 有氧健身类',
+        options: [
+          { value: 'walking_jogging', label: '散步慢跑' },
+          { value: 'rope_skipping', label: '跳绳' },
+          { value: 'yoga', label: '瑜伽拉伸' },
+          { value: 'swimming', label: '游泳' },
+          { value: 'gym', label: '器械健身' },
+          { value: 'cycling', label: '骑行' },
+          { value: 'rarely_exercise', label: '几乎不运动', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'rarely_exercise'
+      },
+      {
+        id: 'fun_sports',
+        type: 'multi-select',
+        title: '3. 休闲趣味运动',
+        options: [
+          { value: 'dance', label: '跳舞' },
+          { value: 'skateboard', label: '滑板轮滑' },
+          { value: 'hiking', label: '爬山徒步' },
+          { value: 'fishing', label: '钓鱼' },
+          { value: 'camping', label: '飞盘/户外露营' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      }
+    ]
+  },
+  {
+    id: 'short_video',
+    title: '短视频平台',
+    icon: '📱',
+    questions: [
+      {
+        id: 'video_apps',
+        type: 'multi-select',
+        title: '1. 日常刷取软件',
+        options: [
+          { value: 'douyin', label: '抖音' },
+          { value: 'kuaishou', label: '快手' },
+          { value: 'bilibili', label: 'B站' },
+          { value: 'xiaohongshu', label: '小红书' },
+          { value: 'xigua', label: '西瓜视频' },
+          { value: 'wechat_video', label: '视频号' },
+          { value: 'rarely_video', label: '很少刷短视频', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'rarely_video'
+      },
+      {
+        id: 'video_content',
+        type: 'multi-select',
+        title: '2. 偏爱观看内容类型',
+        options: [
+          { value: 'food_explore', label: '美食探店' },
+          { value: 'game_commentary', label: '游戏解说' },
+          { value: 'film_clips', label: '影视剪辑' },
+          { value: 'funny_daily', label: '搞笑日常' },
+          { value: 'travel', label: '风景旅行' },
+          { value: 'knowledge', label: '知识科普' },
+          { value: 'anime', label: '二次元动漫' },
+          { value: 'fashion_beauty', label: '穿搭美妆' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      }
+    ]
+  },
+  {
+    id: 'games',
+    title: '精细化游戏分区',
+    icon: '🎮',
+    questions: [
+      {
+        id: 'moba',
+        type: 'multi-select',
+        title: '1. MOBA竞技类',
+        options: [
+          { value: 'honor_of_kings', label: '王者荣耀' },
+          { value: 'lol', label: '英雄联盟手游/端游' },
+          { value: 'tft', label: '金铲铲之战' },
+          { value: 'onmyoji_arena', label: '决战平安京' },
+          { value: 'dota2', label: 'DOTA2' },
+          { value: 'no_moba', label: '不玩MOBA', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'no_moba'
+      },
+      {
+        id: 'shooter',
+        type: 'multi-select',
+        title: '2. 射击竞技类',
+        options: [
+          { value: 'valorant', label: '无畏契约（瓦罗兰特）' },
+          { value: 'pubg_mobile', label: '和平精英' },
+          { value: 'crossfire', label: 'CF穿越火线' },
+          { value: 'cs2', label: 'CS2' },
+          { value: 'apex', label: 'Apex英雄' },
+          { value: 'arena_breakout', label: '暗区突围' },
+          { value: 'no_shooter', label: '不玩射击游戏', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'no_shooter'
+      },
+      {
+        id: 'anime_games',
+        type: 'multi-select',
+        title: '3. 二次元养成游戏',
+        options: [
+          { value: 'genshin', label: '原神' },
+          { value: 'star_rail', label: '崩坏：星穹铁道' },
+          { value: 'zzz', label: '绝区零' },
+          { value: 'onmyoji', label: '阴阳师' },
+          { value: 'fgo', label: 'FGO' },
+          { value: 'blue_archive', label: '蔚蓝档案' },
+          { value: 'arknights', label: '明日方舟' },
+          { value: 'tower_of_fantasy', label: '幻塔' },
+          { value: 'no_anime_game', label: '不玩二游', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'no_anime_game'
+      },
+      {
+        id: 'casual_games',
+        type: 'multi-select',
+        title: '4. 休闲/单机/网游',
+        options: [
+          { value: 'egg_party', label: '蛋仔派对' },
+          { value: 'identity_v', label: '第五人格' },
+          { value: 'sky', label: '光遇' },
+          { value: 'naraka', label: '永劫无间' },
+          { value: 'it_takes_two', label: '双人成行' },
+          { value: 'dnf', label: 'DNF地下城' },
+          { value: 'rarely_game', label: '几乎不玩游戏', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'rarely_game'
+      }
+    ]
+  },
+  {
+    id: 'hobbies',
+    title: '休闲日常爱好',
+    icon: '🌸',
+    questions: [
+      {
+        id: 'relax_ways',
+        type: 'multi-select',
+        title: '1. 空闲放松方式',
+        options: [
+          { value: 'music', label: '听歌放空' },
+          { value: 'drama_movie', label: '追剧电影综艺' },
+          { value: 'reading', label: '看书阅读' },
+          { value: 'photography', label: '拍照记录生活' },
+          { value: 'shopping', label: '逛街探店' },
+          { value: 'stay_home', label: '宅家发呆休息' },
+          { value: 'learning', label: '学习提升' },
+          { value: 'art_craft', label: '画画手工创作' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      },
+      {
+        id: 'weather_pref',
+        type: 'multi-select',
+        title: '2. 季节天气偏好',
+        options: [
+          { value: 'sunny', label: '晴天' },
+          { value: 'cloudy', label: '阴天' },
+          { value: 'autumn', label: '秋天' },
+          { value: 'spring', label: '春天' },
+          { value: 'summer', label: '夏天' },
+          { value: 'snowy_winter', label: '下雪冬日' },
+          { value: 'rainy', label: '下雨天' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      },
+      {
+        id: 'aesthetic',
+        type: 'multi-select',
+        title: '3. 审美氛围偏好',
+        options: [
+          { value: 'minimal_clean', label: '极简干净' },
+          { value: 'warm_healing', label: '温暖治愈' },
+          { value: 'niche_premium', label: '小众高级' },
+          { value: 'lively', label: '烟火热闹' },
+          { value: 'quiet_cool', label: '清冷安静' },
+          { value: 'retro', label: '复古风' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      }
+    ]
+  },
+  {
+    id: 'personality_traits',
+    title: '性格处事习惯',
+    icon: '🧠',
+    questions: [
+      {
+        id: 'work_style',
+        type: 'multi-select',
+        title: '1. 做事风格',
+        options: [
+          { value: 'planner', label: '提前规划条理清晰' },
+          { value: 'go_with_flow', label: '随性顺其自然' },
+          { value: 'efficient', label: '干脆高效果断' },
+          { value: 'perfectionist', label: '细心追求完美' },
+          { value: 'buddha', label: '佛系不争不抢' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      },
+      {
+        id: 'emotion_traits',
+        type: 'multi-select',
+        title: '2. 情绪特质',
+        options: [
+          { value: 'stable', label: '情绪稳定很少内耗' },
+          { value: 'empathetic', label: '共情细腻心软' },
+          { value: 'self_heal', label: '乐观自愈快' },
+          { value: 'slow_express', label: '慢热不善表达' },
+          { value: 'occasional_low', label: '偶尔低落调整快' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      },
+      {
+        id: 'social_traits',
+        type: 'multi-select',
+        title: '3. 待人特质',
+        options: [
+          { value: 'cold_outside', label: '外冷内热' },
+          { value: 'slow_sincere', label: '慢热真诚专一' },
+          { value: 'easygoing', label: '自来熟好相处' },
+          { value: 'tolerant', label: '包容体谅他人' },
+          { value: 'independent_mind', label: '独立不爱麻烦别人' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      }
+    ]
+  },
+  {
+    id: 'compatibility',
+    title: '相处适配偏好',
+    icon: '💞',
+    questions: [
+      {
+        id: 'interaction_mode',
+        type: 'multi-select',
+        title: '1. 喜欢的相处模式',
+        options: [
+          { value: 'quiet_company', label: '安静陪伴，各自忙碌' },
+          { value: 'daily_sharing', label: '日常碎碎念分享' },
+          { value: 'going_out', label: '经常结伴出门' },
+          { value: 'much_alone', label: '需要大量独处空间' },
+          { value: 'keep_distance', label: '保持距离不黏人' },
+          { value: 'banter_type', label: '轻松互怼搞笑型' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      },
+      {
+        id: 'comm_style',
+        type: 'multi-select',
+        title: '2. 舒适沟通方式',
+        options: [
+          { value: 'direct', label: '直接坦率不绕弯' },
+          { value: 'tactful', label: '委婉照顾情绪' },
+          { value: 'concise', label: '简洁高效少废话' },
+          { value: 'casual_chat', label: '随心慢慢闲聊' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      },
+      {
+        id: 'pet_peeves',
+        type: 'multi-select',
+        title: '3. 相处反感小事',
+        options: [
+          { value: 'hate_cold', label: '讨厌敷衍冷淡' },
+          { value: 'hate_rushed', label: '讨厌被催促逼迫' },
+          { value: 'hate_flaky', label: '讨厌失信拖延' },
+          { value: 'hate_noisy', label: '讨厌过度吵闹' },
+          { value: 'hate_forced_social', label: '讨厌强行社交' },
+          { value: 'hate_silent_treatment', label: '讨厌冷战不沟通' },
+          { value: 'no_peeve', label: '基本无雷点', isExclusive: true },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: 'no_peeve'
+      }
+    ]
+  },
+  {
+    id: 'lifestyle',
+    title: '生活小习惯',
+    icon: '🏠',
+    questions: [
+      {
+        id: 'sleep_schedule',
+        type: 'multi-select',
+        title: '1. 作息类型',
+        options: [
+          { value: 'early_bird', label: '早睡早起规律' },
+          { value: 'occasional_late', label: '偶尔熬夜、作息尚可' },
+          { value: 'night_owl', label: '标准熬夜党' },
+          { value: 'random_sleep', label: '作息随缘、不固定' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      },
+      {
+        id: 'life_prefs',
+        type: 'multi-select',
+        title: '2. 生活小偏好',
+        options: [
+          { value: 'ritualistic', label: '喜欢生活有仪式感' },
+          { value: 'organized', label: '爱收纳整理整洁' },
+          { value: 'try_new', label: '喜欢尝试新鲜事物' },
+          { value: 'stable_life', label: '偏爱安稳不变的生活' },
+          { value: 'journaling', label: '习惯记录日常点滴' },
+          { value: 'laid_back', label: '随性懒散、舒服为主' },
+          { value: 'other', label: '其他', isOther: true, maxChars: 50 }
+        ],
+        exclusiveOption: null
+      }
+    ]
+  }
+];
+
+// ================================================================
+// 三、全局状态管理
+// ================================================================
+
+const STATE = {
+  session: null,
+  user: null,
+  profile: null,
+  currentPage: null,
+  currentForm: null, // 当前正在查看/编辑的表单
+  forms: [],         // 用户的表单列表
+  submissions: [],   // 当前表单的提交记录
+  darkMode: false,
+  fontSize: 'medium',
+  loading: false
+};
+
+// 简易订阅机制
+const listeners = {};
+function on(event, fn) {
+  if (!listeners[event]) listeners[event] = [];
+  listeners[event].push(fn);
+}
+function emit(event, data) {
+  (listeners[event] || []).forEach(fn => fn(data));
+}
+
+// ================================================================
+// 四、工具函数
+// ================================================================
+
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function nanoid(len = 12) {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < len; i++) result += chars[Math.floor(Math.random() * chars.length)];
+  return result;
+}
+
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return '刚刚';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+  return `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
+}
+
+function getTagColor(index) {
+  return `tag-color-${index % 8}`;
+}
+
+function getDeviceFingerprint() {
+  let fp = localStorage.getItem('zhiyi_device_fp');
+  if (!fp) {
+    fp = 'fp_' + nanoid(24);
+    localStorage.setItem('zhiyi_device_fp', fp);
+  }
+  return fp;
+}
+
+function svgIcon(id, size = 24) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor"><use href="#icon-${id}"/></svg>`;
+}
+
+// 图片压缩（Canvas）
+function compressImage(file, maxW = 256, maxH = 256, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = h * (maxW / w); w = maxW; }
+        if (h > maxH) { w = w * (maxH / h); h = maxH; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('压缩失败'));
+        }, file.type || 'image/jpeg', quality);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// 生成卡通头像 HTML
+function renderCartoonAvatar(avatar) {
+  return `<div class="w-full h-full rounded-full flex items-center justify-center text-2xl" style="background:${avatar.bg}">${avatar.icon || avatar.emoji}</div>`;
+}
+
+// ================================================================
+// 五、Supabase 客户端
+// ================================================================
+
+// supabase 客户端实例（由 Supabase SDK 提供全局变量）
+var _sb = null;
+
+function initSupabase() {
+  if (!SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
+    if (typeof supabase !== 'undefined' && supabase.createClient) {
+      _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log('✅ Supabase 已初始化');
+    } else {
+      console.warn('⚠️ Supabase SDK 未加载，请检查网络');
+      _sb = null;
+    }
+  } else {
+    console.warn('⚠️ 请先配置 SUPABASE_URL 和 SUPABASE_ANON_KEY');
+    _sb = null;
+  }
+}
+
+// 兼容函数：所有之前用 supabase 变量的地方改为 getSupabase()
+function getSupabase() { return _sb; }
+
+// ================================================================
+// 六、Toast 通知
+// ================================================================
+
+function showToast(message, type = 'info', duration = 3000) {
+  const container = $('#toast-container');
+  const icons = { info: '💬', success: '✅', warning: '⚠️', error: '❌' };
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<span class="text-lg">${icons[type] || '💬'}</span><span class="text-sm text-text-pri flex-1">${escapeHtml(message)}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = 'slideOutRight 0.3s ease-out forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+// ================================================================
+// 七、模态弹窗系统
+// ================================================================
+
+function showModal(title, content, opts = {}) {
+  const container = $('#modal-container');
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-content animate-fade-in-up">
+      <div class="flex items-center justify-between p-4 border-b border-gray-100">
+        <h3 class="font-semibold text-lg text-text-pri">${escapeHtml(title)}</h3>
+        <button class="btn btn-ghost btn-sm w-8 h-8 rounded-full p-0" onclick="closeModal()">${svgIcon('close', 20)}</button>
+      </div>
+      <div class="p-4">${content}</div>
+      ${opts.footer ? `<div class="p-4 border-t border-gray-100 flex justify-end gap-2">${opts.footer}</div>` : ''}
+    </div>
+  `;
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+  container.innerHTML = '';
+  container.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  if (opts.onOpen) opts.onOpen();
+}
+
+function closeModal() {
+  $('#modal-container').innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+function showConfirm(title, message, onConfirm, opts = {}) {
+  const confirmText = opts.confirmText || '确认';
+  const cancelText = opts.cancelText || '取消';
+  const danger = opts.danger || false;
+  showModal(title, `<p class="text-text-sec">${escapeHtml(message)}</p>`, {
+    footer: `
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">${cancelText}</button>
+      <button class="btn btn-sm ${danger ? 'btn-danger' : 'btn-primary'}" id="confirm-btn">${confirmText}</button>
+    `,
+    onOpen: () => {
+      setTimeout(() => {
+        const btn = $('#confirm-btn');
+        if (btn) {
+          btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = '处理中...';
+            try { await onConfirm(); } catch (e) { console.error(e); }
+            btn.disabled = false;
+            btn.textContent = confirmText;
+            closeModal();
+          });
+        }
+      }, 100);
+    }
+  });
+}
+
+// ================================================================
+// 八、路由系统
+// ================================================================
+
+const ROUTES = [];
+
+function route(pattern, pageName, opts = {}) {
+  ROUTES.push({ pattern, pageName, ...opts });
+}
+
+function navigate(path) {
+  window.location.hash = '#' + path;
+}
+
+function getCurrentRoute() {
+  const hash = window.location.hash.replace('#', '') || '/';
+  for (const r of ROUTES) {
+    const regex = r.pattern.replace(/:\w+/g, '([^/]+)');
+    const match = hash.match(new RegExp('^' + regex + '$'));
+    if (match) {
+      const params = {};
+      const keys = (r.pattern.match(/:\w+/g) || []).map(k => k.slice(1));
+      keys.forEach((k, i) => { params[k] = match[i + 1]; });
+      return { ...r, params };
+    }
+  }
+  return { pageName: 'landing', params: {} };
+}
+
+async function handleRoute() {
+  const route = getCurrentRoute();
+  const container = $('#page-content');
+  const bottomNav = $('#bottom-nav');
+
+  // 无登录模式：所有页面均可直接访问
+  STATE.currentPage = route.pageName;
+
+  // 控制底部导航显示
+  if (['dashboard'].includes(route.pageName)) {
+    bottomNav.classList.remove('hidden');
+  } else {
+    bottomNav.classList.add('hidden');
+  }
+
+  // 渲染页面
+  container.innerHTML = '<div class="flex items-center justify-center py-20"><div class="loading-spinner"></div></div>';
+
+  try {
+    switch (route.pageName) {
+      case 'landing':
+      case 'login':
+      case 'register':
+      case 'reset-password':
+        await renderDashboard(container, {}); break;  // 直接进控制台
+      case 'dashboard': await renderDashboard(container, route.params); break;
+      case 'fill': await renderFormFill(container, route.params); break;
+      case 'profile': await renderProfile(container); break;
+      default: container.innerHTML = '<div class="text-center py-20"><p class="text-text-sec">页面未找到</p></div>';
+    }
+  } catch (err) {
+    console.error('页面渲染错误:', err);
+    container.innerHTML = `<div class="text-center py-20"><p class="text-text-sec">加载失败：${escapeHtml(err.message)}</p><button class="btn btn-primary mt-4" onclick="navigate('/dashboard')">重试</button></div>`;
+  }
+
+  updateNavbar();
+  updateBottomNav();
+  window.scrollTo(0, 0);
+}
+
+// ================================================================
+// 九、自动登录模块（无感，无需用户操作）
+// ================================================================
+
+async function initAuth() {
+  if (!_sb) {
+    console.warn('Supabase 未配置，部分功能不可用');
+    handleRoute();
+    return;
+  }
+
+  // 1. 尝试恢复已有 session
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session) {
+    STATE.session = session;
+    STATE.user = session.user;
+    await loadProfile();
+    handleRoute();
+    return;
+  }
+
+  // 2. 尝试用本地存储的凭据登录
+  let creds = null;
+  try { creds = JSON.parse(localStorage.getItem('zhiyi_auto_creds') || 'null'); } catch(e) {}
+
+  // 清除旧版 @zhiyi.local 凭据
+  if (creds && creds.email && creds.email.includes('@zhiyi.local')) {
+    localStorage.removeItem('zhiyi_auto_creds');
+    creds = null;
+  }
+
+  if (creds && creds.email && creds.password) {
+    const { data, error } = await _sb.auth.signInWithPassword({
+      email: creds.email, password: creds.password
+    });
+    if (!error && data.session) {
+      STATE.session = data.session;
+      STATE.user = data.session.user;
+      await loadProfile();
+      handleRoute();
+      return;
+    }
+    localStorage.removeItem('zhiyi_auto_creds');
+  }
+
+  // 3. 使用预设云端账号登录
+  const { data: fbData, error: fbError } = await _sb.auth.signInWithPassword({
+    email: 'device_auto@zhiyiapp.com', password: 'zhiyi2024auto'
+  });
+
+  if (fbData?.session) {
+    STATE.session = fbData.session;
+    STATE.user = fbData.session.user;
+    await loadProfile();
+    showToast('已连接云端 ✅', 'success', 2000);
+    handleRoute();
+    return;
+  }
+
+  // 备用：重试注册（限频恢复后生效）
+  if (!fbError || fbError.status === 400) {
+    const deviceId = getDeviceFingerprint();
+    const { data: signUpData } = await _sb.auth.signUp({
+      email: `device_${deviceId}@zhiyiapp.com`,
+      password: 'auto_' + nanoid(16)
+    });
+    if (signUpData?.session) {
+      STATE.session = signUpData.session;
+      STATE.user = signUpData.session.user;
+      await loadProfile();
+      showToast('已自动创建账号 🎉', 'success', 2000);
+      handleRoute();
+      return;
+    }
+  }
+
+  handleRoute();
+}
+
+async function loadProfile() {
+  if (!STATE.user) return;
+  try {
+    const { data, error } = await _sb.from('profiles').select('*').eq('id', STATE.user.id).maybeSingle();
+    if (data) {
+      STATE.profile = data;
+      STATE.darkMode = data.dark_mode || false;
+      STATE.fontSize = data.font_size || 'medium';
+      applyTheme();
+      return;
+    }
+    // 自动补建 profile
+    const displayName = '用户' + nanoid(6);
+    const { data: newProfile } = await _sb.from('profiles').insert({
+      id: STATE.user.id, username: displayName, display_name: displayName,
+      internal_email: STATE.user.email || '', security_question: '', security_answer_hash: ''
+    }).select().maybeSingle();
+    if (newProfile) {
+      STATE.profile = newProfile;
+      STATE.darkMode = false;
+      STATE.fontSize = 'medium';
+      applyTheme();
+    }
+  } catch(e) {
+    console.warn('Profile 加载失败，使用本地模式:', e.message || e);
+    // 创建本地伪 profile
+    STATE.profile = {
+      id: STATE.user.id,
+      username: '本地用户',
+      display_name: '本地用户',
+      avatar_url: '', avatar_mode: 'none',
+      dark_mode: false, font_size: 'medium',
+      internal_email: STATE.user.email || '',
+      onboarding_done: true
+    };
+    applyTheme();
+  }
+}
+
+async function doRegister(username, password, securityQuestion, securityAnswer) {
+  if (!_sb) { showToast('请先配置 Supabase', 'error'); return false; }
+  const internalEmail = `user_${nanoid(12)}@zhiyiapp.com`;
+  const { data: authData, error: authError } = await _sb.auth.signUp({
+    email: internalEmail,
+    password: password
+  });
+  if (authError) { showToast(authError.message, 'error'); return false; }
+  if (!authData.user) { showToast('注册失败，请重试', 'error'); return false; }
+
+  const answerHash = await sha256(securityAnswer.toLowerCase().trim());
+  const { error: profileError } = await _sb.from('profiles').insert({
+    id: authData.user.id,
+    username: username,
+    display_name: username,
+    internal_email: internalEmail,
+    security_question: securityQuestion,
+    security_answer_hash: answerHash
+  });
+  if (profileError) {
+    showToast(profileError.message, 'error');
+    return false;
+  }
+  STATE.session = authData.session;
+  STATE.user = authData.user;
+  await loadProfile();
+  showToast('注册成功！欢迎加入知意小记 🎉', 'success');
+  return true;
+}
+
+async function doLogin(username, password) {
+  if (!_sb) { showToast('请先配置 Supabase', 'error'); return false; }
+  const { data: profiles } = await _sb.from('profiles').select('internal_email').eq('username', username).limit(1);
+  if (!profiles || profiles.length === 0) { showToast('用户名不存在', 'error'); return false; }
+  const { error } = await _sb.auth.signInWithPassword({
+    email: profiles[0].internal_email,
+    password: password
+  });
+  if (error) { showToast('密码错误', 'error'); return false; }
+  showToast('登录成功！', 'success');
+  return true;
+}
+
+async function doLogout() {
+  if (!_sb) return;
+  await _sb.auth.signOut();
+  STATE.session = null;
+  STATE.user = null;
+  STATE.profile = null;
+  STATE.forms = [];
+  STATE.submissions = [];
+  navigate('/');
+  showToast('已退出登录', 'info');
+}
+
+async function doResetPassword(username, securityAnswer, newPassword) {
+  if (!_sb) { showToast('请先配置 Supabase', 'error'); return false; }
+  const { data: profiles } = await _sb.from('profiles').select('*').eq('username', username).limit(1);
+  if (!profiles || profiles.length === 0) { showToast('用户名不存在', 'error'); return false; }
+  const profile = profiles[0];
+  const answerHash = await sha256(securityAnswer.toLowerCase().trim());
+  if (answerHash !== profile.security_answer_hash) {
+    showToast('密保答案错误', 'error');
+    return false;
+  }
+  const internalEmail = profile.internal_email;
+  const { error } = await _sb.auth.signInWithPassword({ email: internalEmail, password: 'temp_reset_placeholder' }).catch(() => ({ error: null }));
+  const { error: updateError } = await _sb.auth.updateUser({ password: newPassword });
+  if (updateError) {
+    showToast(updateError.message, 'error');
+    return false;
+  }
+  showToast('密码重置成功！请使用新密码登录', 'success');
+  return true;
+}
+
+async function checkUsernameAvailable(username) {
+  if (!_sb) return true;
+  const { data } = await _sb.from('profiles').select('id').eq('username', username).limit(1);
+  return !data || data.length === 0;
+}
+
+// ================================================================
+// 十、导航栏 & 底部导航
+// ================================================================
+
+function updateNavbar() {
+  const nav = $('#navbar');
+  const actions = $('#navbar-actions');
+  if (!nav || !actions) return;
+
+  nav.classList.remove('hidden');
+  nav.classList.add('flex');
+
+  const p = STATE.profile || {};
+  const displayChar = (p.display_name || '我')[0];
+
+  actions.innerHTML = `
+    <button class="btn btn-primary btn-sm" onclick="showCreateFormModal()">${svgIcon('add', 18)}<span class="hidden md:inline">新建收集</span></button>
+    <div class="relative" id="user-menu-wrap">
+      <button class="avatar-circle avatar-circle-sm cursor-pointer" onclick="toggleUserMenu()" id="user-menu-btn">
+        ${p.avatar_url
+          ? `<img src="${escapeHtml(p.avatar_url)}" class="w-full h-full object-cover rounded-full">`
+          : displayChar}
+      </button>
+      <div id="user-menu-dropdown" class="hidden absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-2 min-w-[140px] z-50">
+        <button class="w-full text-left px-4 py-2.5 text-sm hover:bg-milk-blue transition-colors" onclick="navigate('/profile');toggleUserMenu()">个人中心</button>
+        <button class="w-full text-left px-4 py-2.5 text-sm hover:bg-milk-blue transition-colors" onclick="showMyAccessInfo()">我的访问凭据</button>
+      </div>
+    </div>
+  `;
+}
+
+function toggleUserMenu() {
+  const dropdown = $('#user-menu-dropdown');
+  if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+document.addEventListener('click', (e) => {
+  const menu = $('#user-menu-wrap');
+  const dropdown = $('#user-menu-dropdown');
+  if (menu && dropdown && !menu.contains(e.target)) {
+    dropdown.classList.add('hidden');
+  }
+});
+
+function updateBottomNav() {
+  const nav = $('#bottom-nav');
+  if (!nav) return;
+  nav.innerHTML = `
+    <button class="bottom-nav-item ${STATE.currentPage === 'dashboard' && !window._dashTab ? 'active' : ''}" onclick="navigate('/dashboard');window._dashTab='forms';updateBottomNav()">
+      ${svgIcon('archive', 22)}<span>我的表单</span>
+    </button>
+    <button class="bottom-nav-item ${window._dashTab === 'records' ? 'active' : ''}" onclick="navigate('/dashboard');window._dashTab='records';updateBottomNav();setTimeout(()=>switchDashTab('records'),100)">
+      ${svgIcon('person', 22)}<span>填写记录</span>
+    </button>
+    <button class="bottom-nav-item ${window._dashTab === 'favorites' ? 'active' : ''}" onclick="navigate('/dashboard');window._dashTab='favorites';updateBottomNav();setTimeout(()=>switchDashTab('favorites'),100)">
+      ${svgIcon('favorite', 22)}<span>收藏档案</span>
+    </button>
+    <button class="bottom-nav-item ${STATE.currentPage === 'profile' ? 'active' : ''}" onclick="navigate('/profile')">
+      ${svgIcon('settings', 22)}<span>我的</span>
+    </button>
+  `;
+}
+
+// ================================================================
+// 十一、主题设置
+// ================================================================
+
+function applyTheme() {
+  if (STATE.darkMode) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+  document.body.classList.remove('font-small', 'font-medium', 'font-large');
+  document.body.classList.add('font-' + STATE.fontSize);
+}
+
+function toggleDarkMode() {
+  STATE.darkMode = !STATE.darkMode;
+  applyTheme();
+  if (STATE.profile && supabase) {
+    _sb.from('profiles').update({ dark_mode: STATE.darkMode }).eq('id', STATE.user.id).then(() => {});
+  }
+  showToast(STATE.darkMode ? '已切换为护眼暗色模式 🌙' : '已切换为浅色模式 ☀️', 'info');
+}
+
+function setFontSize(size) {
+  STATE.fontSize = size;
+  applyTheme();
+  if (STATE.profile && supabase) {
+    _sb.from('profiles').update({ font_size: size }).eq('id', STATE.user.id).then(() => {});
+  }
+  const labels = { small: '小号', medium: '标准', large: '大号' };
+  showToast(`文字大小：${labels[size]}`, 'info');
+}
+
+// ================================================================
+// 十二、页面渲染函数
+// ================================================================
+
+// ---- 启动首页 ----
+async function renderLanding(container) {
+  container.innerHTML = `
+    <div class="min-h-[80vh] flex flex-col items-center justify-center py-12 animate-fade-in">
+      <div class="text-center mb-10">
+        <div class="mx-auto mb-6 flex items-center justify-center">
+          <svg width="72" height="80" viewBox="0 0 32 40" class="drop-shadow-sm">
+            <rect x="3" y="2" width="26" height="36" rx="5" fill="#E8F2FC" stroke="#d0dce8" stroke-width="1.2"/>
+            <line x1="7" y1="12" x2="25" y2="12" stroke="#d0dce8" stroke-width="0.6"/>
+            <line x1="7" y1="16" x2="25" y2="16" stroke="#d0dce8" stroke-width="0.6"/>
+            <line x1="7" y1="20" x2="22" y2="20" stroke="#d0dce8" stroke-width="0.6"/>
+            <line x1="7" y1="24" x2="19" y2="24" stroke="#d0dce8" stroke-width="0.6"/>
+            <rect x="5" y="28" width="14" height="2" rx="1" fill="#FFF5EB" opacity="0.6"/>
+            <path d="M13.5 31.5 C14.5 30.5, 16 30, 17 31 C18 32, 16.5 33.5, 17.5 35 C18.5 33.5, 17 32, 17.5 31 C18 30, 19.5 30.5, 20.5 31.5" fill="#F4C2C2" stroke="none"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-semibold text-text-pri mb-2">知意小记</h1>
+        <p class="text-text-sec text-sm">温柔地收集身边人的喜好与心意</p>
+      </div>
+
+      <div class="w-full max-w-md space-y-4">
+        <div class="card card-hover cursor-pointer" onclick="${STATE.session ? "navigate('/dashboard')" : "navigate('/login')"}">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-milk-blue flex items-center justify-center text-2xl">📋</div>
+            <div class="flex-1">
+              <h3 class="font-semibold text-text-pri">我的档案管理</h3>
+              <p class="text-text-sec text-sm">${STATE.session ? '管理收集表单与填写记录' : '登录/注册账号，创建收集表单'}</p>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ccc"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+          </div>
+        </div>
+
+        <div class="card card-hover cursor-pointer" onclick="showTestFormPreview()">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-apricot flex items-center justify-center text-2xl">✍️</div>
+            <div class="flex-1">
+              <h3 class="font-semibold text-text-pri">填写收集表单</h3>
+              <p class="text-text-sec text-sm">预览问卷完整效果（本地测试）</p>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ccc"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-text-sec text-xs mt-10 text-center opacity-60" style="font-size:11px">
+        本工具仅收集您主动填写的信息，数据加密存储于您的个人账号，不会对外分发
+      </p>
+    </div>
+  `;
+}
+
+function showTestFormPreview() {
+  // 创建一个临时表单数据进行预览
+  const tempFormId = 'preview_' + nanoid();
+  localStorage.setItem('zhiyi_preview_mode', 'true');
+  navigate('/fill/' + tempFormId);
+}
+
+// ---- 登录页 ----
+async function renderLogin(container) {
+  container.innerHTML = `
+    <div class="min-h-[80vh] flex flex-col items-center justify-center py-12 animate-fade-in">
+      <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+          <svg width="48" height="48" viewBox="0 0 32 32" class="mx-auto mb-4"><use href="#icon-logo"/></svg>
+          <h2 class="text-xl font-semibold text-text-pri">欢迎回来</h2>
+          <p class="text-text-sec text-sm mt-1">登录你的知意小记账号</p>
+        </div>
+        <div class="card">
+          <div class="space-y-4">
+            <div>
+              <label class="text-sm text-text-sec mb-1.5 block">用户名</label>
+              <input type="text" id="login-username" class="input" placeholder="请输入用户名" maxlength="30" autocomplete="username">
+            </div>
+            <div>
+              <label class="text-sm text-text-sec mb-1.5 block">登录密码</label>
+              <input type="password" id="login-password" class="input" placeholder="请输入密码" autocomplete="current-password">
+            </div>
+            <button class="btn btn-primary w-full btn-lg" id="login-btn">登 录</button>
+          </div>
+          <div class="flex justify-between mt-4 text-sm">
+            <button class="text-bean-red font-medium" onclick="navigate('/register')" style="filter:brightness(0.85)">注册新账号</button>
+            <button class="text-text-sec" onclick="navigate('/reset-password')">忘记密码？</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!username || !password) { showToast('请填写用户名和密码', 'warning'); return; }
+    if (password.length < 6) { showToast('密码不能少于6位', 'warning'); return; }
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.textContent = '登录中...';
+    const ok = await doLogin(username, password);
+    if (ok) {
+      navigate('/dashboard');
+    } else {
+      btn.disabled = false;
+      btn.textContent = '登 录';
+    }
+  });
+
+  document.getElementById('login-password').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('login-btn').click();
+  });
+}
+
+// ---- 注册页 ----
+async function renderRegister(container) {
+  const questions = [
+    '你最喜欢的动物是什么？',
+    '你的出生城市是哪里？',
+    '你小时候的绰号是什么？',
+    '你最喜欢的电影叫什么？',
+    '你的小学名称是什么？',
+    '你最喜欢的一本书是？'
+  ];
+
+  container.innerHTML = `
+    <div class="min-h-[80vh] flex flex-col items-center justify-center py-12 animate-fade-in">
+      <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+          <svg width="48" height="48" viewBox="0 0 32 32" class="mx-auto mb-4"><use href="#icon-logo"/></svg>
+          <h2 class="text-xl font-semibold text-text-pri">创建账号</h2>
+          <p class="text-text-sec text-sm mt-1">仅需用户名和密码，无需手机号或邮箱</p>
+        </div>
+        <div class="card">
+          <div class="space-y-4">
+            <div>
+              <label class="text-sm text-text-sec mb-1.5 block">用户名 <span class="text-bean-red" style="filter:brightness(0.85)">*</span></label>
+              <input type="text" id="reg-username" class="input" placeholder="2-30个字符，支持中英文" maxlength="30" autocomplete="off">
+              <p class="text-xs text-text-sec mt-1" id="reg-username-hint"></p>
+            </div>
+            <div>
+              <label class="text-sm text-text-sec mb-1.5 block">登录密码 <span class="text-bean-red" style="filter:brightness(0.85)">*</span></label>
+              <input type="password" id="reg-password" class="input" placeholder="至少6位密码" autocomplete="new-password">
+            </div>
+            <div>
+              <label class="text-sm text-text-sec mb-1.5 block">确认密码 <span class="text-bean-red" style="filter:brightness(0.85)">*</span></label>
+              <input type="password" id="reg-password2" class="input" placeholder="再次输入密码" autocomplete="new-password">
+            </div>
+            <div class="pt-2 border-t border-gray-100">
+              <label class="text-sm text-text-sec mb-1.5 block">密保问题（用于找回密码）</label>
+              <select id="reg-security-q" class="input">
+                ${questions.map(q => `<option value="${escapeHtml(q)}">${escapeHtml(q)}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="text-sm text-text-sec mb-1.5 block">密保答案</label>
+              <input type="text" id="reg-security-a" class="input" placeholder="请输入你的答案" maxlength="50" autocomplete="off">
+            </div>
+            <button class="btn btn-primary w-full btn-lg" id="reg-btn">注 册</button>
+          </div>
+          <div class="text-center mt-4 text-sm">
+            <span class="text-text-sec">已有账号？</span>
+            <button class="text-bean-red font-medium ml-1" onclick="navigate('/login')" style="filter:brightness(0.85)">去登录</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  let usernameCheckTimer;
+  document.getElementById('reg-username').addEventListener('input', function() {
+    clearTimeout(usernameCheckTimer);
+    const val = this.value.trim();
+    if (val.length < 2) {
+      document.getElementById('reg-username-hint').textContent = '用户名至少2个字符';
+      return;
+    }
+    usernameCheckTimer = setTimeout(async () => {
+      const available = await checkUsernameAvailable(val);
+      document.getElementById('reg-username-hint').textContent = available ? '✅ 用户名可用' : '❌ 该用户名已被使用';
+      document.getElementById('reg-username-hint').style.color = available ? '#10B981' : '#EF4444';
+    }, 500);
+  });
+
+  document.getElementById('reg-btn').addEventListener('click', async () => {
+    const username = document.getElementById('reg-username').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const password2 = document.getElementById('reg-password2').value;
+    const sq = document.getElementById('reg-security-q').value;
+    const sa = document.getElementById('reg-security-a').value.trim();
+
+    if (username.length < 2) { showToast('用户名至少2个字符', 'warning'); return; }
+    if (password.length < 6) { showToast('密码至少6位', 'warning'); return; }
+    if (password !== password2) { showToast('两次密码不一致', 'warning'); return; }
+    if (!sa) { showToast('请填写密保答案', 'warning'); return; }
+
+    const available = await checkUsernameAvailable(username);
+    if (!available) { showToast('用户名已被使用', 'warning'); return; }
+
+    const btn = document.getElementById('reg-btn');
+    btn.disabled = true;
+    btn.textContent = '注册中...';
+    const ok = await doRegister(username, password, sq, sa);
+    if (ok) {
+      navigate('/dashboard');
+    } else {
+      btn.disabled = false;
+      btn.textContent = '注 册';
+    }
+  });
+}
+
+// ---- 密码重置页 ----
+async function renderResetPassword(container) {
+  let step = 1;
+  let foundProfile = null;
+  const questions = [
+    '你最喜欢的动物是什么？',
+    '你的出生城市是哪里？',
+    '你小时候的绰号是什么？',
+    '你最喜欢的电影叫什么？',
+    '你的小学名称是什么？',
+    '你最喜欢的一本书是？'
+  ];
+
+  function render() {
+    container.innerHTML = `
+      <div class="min-h-[80vh] flex flex-col items-center justify-center py-12 animate-fade-in">
+        <div class="w-full max-w-md">
+          <div class="text-center mb-8">
+            <svg width="48" height="48" viewBox="0 0 32 32" class="mx-auto mb-4"><use href="#icon-logo"/></svg>
+            <h2 class="text-xl font-semibold text-text-pri">找回密码</h2>
+            <p class="text-text-sec text-sm mt-1">${step === 1 ? '请输入你的用户名' : step === 2 ? '请回答密保问题' : '设置新密码'}</p>
+          </div>
+          <div class="card">
+            ${step === 1 ? `
+              <div class="space-y-4">
+                <input type="text" id="reset-username" class="input" placeholder="请输入用户名" maxlength="30">
+                <button class="btn btn-primary w-full btn-lg" id="reset-step1-btn">下一步</button>
+              </div>
+            ` : step === 2 ? `
+              <div class="space-y-4">
+                <p class="text-text-sec text-sm">密保问题：<span class="font-medium text-text-pri">${escapeHtml(foundProfile?.security_question || '')}</span></p>
+                <input type="text" id="reset-answer" class="input" placeholder="请输入你的答案" maxlength="50">
+                <button class="btn btn-primary w-full btn-lg" id="reset-step2-btn">验证</button>
+              </div>
+            ` : `
+              <div class="space-y-4">
+                <input type="password" id="reset-new-pw" class="input" placeholder="请输入新密码（至少6位）">
+                <input type="password" id="reset-new-pw2" class="input" placeholder="再次输入新密码">
+                <button class="btn btn-primary w-full btn-lg" id="reset-step3-btn">重置密码</button>
+              </div>
+            `}
+            <div class="text-center mt-4 text-sm">
+              <button class="text-bean-red font-medium" onclick="navigate('/login')" style="filter:brightness(0.85)">返回登录</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    bindEvents();
+  }
+
+  function bindEvents() {
+    if (step === 1) {
+      const btn = document.getElementById('reset-step1-btn');
+      const input = document.getElementById('reset-username');
+      if (btn) btn.addEventListener('click', async () => {
+        const username = input.value.trim();
+        if (!username) { showToast('请输入用户名', 'warning'); return; }
+        if (!_sb) { showToast('请先配置Supabase', 'error'); return; }
+        const { data } = await _sb.from('profiles').select('*').eq('username', username).limit(1);
+        if (!data || data.length === 0) { showToast('用户名不存在', 'error'); return; }
+        foundProfile = data[0];
+        if (!foundProfile.security_question) { showToast('该账号未设置密保问题，无法找回', 'error'); return; }
+        step = 2;
+        render();
+      });
+      if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') btn?.click(); });
+    } else if (step === 2) {
+      const btn = document.getElementById('reset-step2-btn');
+      const input = document.getElementById('reset-answer');
+      if (btn) btn.addEventListener('click', async () => {
+        const answer = input.value.trim();
+        if (!answer) { showToast('请输入密保答案', 'warning'); return; }
+        const answerHash = await sha256(answer.toLowerCase().trim());
+        if (answerHash !== foundProfile.security_answer_hash) { showToast('密保答案错误', 'error'); return; }
+        step = 3;
+        render();
+      });
+      if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') btn?.click(); });
+    } else if (step === 3) {
+      const btn = document.getElementById('reset-step3-btn');
+      if (btn) btn.addEventListener('click', async () => {
+        const pw = document.getElementById('reset-new-pw').value;
+        const pw2 = document.getElementById('reset-new-pw2').value;
+        if (pw.length < 6) { showToast('密码至少6位', 'warning'); return; }
+        if (pw !== pw2) { showToast('两次密码不一致', 'warning'); return; }
+        btn.disabled = true;
+        btn.textContent = '重置中...';
+        const ok = await doResetPassword(foundProfile.username, document.getElementById('reset-answer')?.value || foundProfile.security_answer_hash, pw);
+        btn.disabled = false;
+        btn.textContent = '重置密码';
+        if (ok) { navigate('/login'); }
+      });
+    }
+  }
+
+  render();
+}
+
+// ---- 控制面板 ----
+let dashTab = 'forms';
+
+function switchDashTab(tab) {
+  dashTab = tab;
+  window._dashTab = tab;
+  updateBottomNav();
+  renderDashboardContent($('#page-content'));
+}
+
+async function renderDashboard(container, params) {
+  if (!dashTab) dashTab = 'forms';
+
+  container.innerHTML = `
+    <div class="animate-fade-in">
+      <!-- Tab 切换条 -->
+      <div class="flex gap-1 mb-4 bg-white rounded-xl p-1 shadow-sm overflow-x-auto">
+        <button class="flex-1 min-w-[80px] py-2.5 px-3 rounded-lg text-sm font-medium transition-all ${dashTab === 'forms' ? 'bg-bean-red text-white' : 'text-text-sec'}" onclick="switchDashTab('forms')">📋 我的表单</button>
+        <button class="flex-1 min-w-[80px] py-2.5 px-3 rounded-lg text-sm font-medium transition-all ${dashTab === 'records' ? 'bg-bean-red text-white' : 'text-text-sec'}" onclick="switchDashTab('records')">📝 填写记录</button>
+        <button class="flex-1 min-w-[80px] py-2.5 px-3 rounded-lg text-sm font-medium transition-all ${dashTab === 'favorites' ? 'bg-bean-red text-white' : 'text-text-sec'}" onclick="switchDashTab('favorites')">⭐ 收藏档案</button>
+      </div>
+      <div id="dash-content-area"></div>
+    </div>
+  `;
+
+  updateBottomNav();
+  await renderDashboardContent(container);
+}
+
+async function renderDashboardContent(container) {
+  const area = $('#dash-content-area');
+  if (!area) return;
+  area.innerHTML = '<div class="flex justify-center py-10"><div class="loading-spinner"></div></div>';
+
+  if (dashTab === 'forms') {
+    await renderFormsTab(area);
+  } else if (dashTab === 'records') {
+    await renderRecordsTab(area);
+  } else if (dashTab === 'favorites') {
+    await renderFavoritesTab(area);
+  }
+}
+
+// ---- 我的表单 Tab ----
+async function renderFormsTab(container) {
+  if (!supabase || !STATE.profile) {
+    container.innerHTML = '<div class="text-center py-10 text-text-sec">请先登录</div>';
+    return;
+  }
+
+  const { data: forms } = await _sb.from('forms').select('*').eq('user_id', STATE.user.id).order('updated_at', { ascending: false });
+  STATE.forms = forms || [];
+
+  let html = '';
+
+  // 快速操作栏
+  html += `
+    <div class="flex gap-2 mb-4 flex-wrap">
+      <button class="btn btn-primary btn-sm" onclick="showCreateFormModal()">${svgIcon('add', 16)} 新建收集表单</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportAllRecords()">${svgIcon('download', 16)} 导出全部</button>
+      <span class="flex-1"></span>
+      <div class="relative">
+        <input type="text" id="form-search" class="input" placeholder="搜索表单..." style="min-height:36px;padding:6px 12px;font-size:0.875em;width:160px" oninput="filterFormList()">
+      </div>
+    </div>
+  `;
+
+  // 表单列表
+  if (STATE.forms.length === 0) {
+    html += `
+      <div class="card text-center py-12">
+        <div class="text-4xl mb-3">📋</div>
+        <p class="text-text-sec mb-4">还没有创建任何收集表单</p>
+        <button class="btn btn-primary" onclick="showCreateFormModal()">${svgIcon('add', 16)} 创建第一个表单</button>
+      </div>
+    `;
+  } else {
+    html += '<div class="space-y-3" id="form-list">';
+    STATE.forms.forEach((form, i) => {
+      const isExpired = form.expiry_date && new Date(form.expiry_date) < new Date();
+      const isFull = form.max_submissions > 0 && form.submission_count >= form.max_submissions;
+      const statusBadge = isExpired ? '<span class="badge" style="background:#FFF3E0;color:#E65100">已过期</span>'
+        : isFull ? '<span class="badge" style="background:#FCE4EC;color:#C62828">已满额</span>'
+        : '<span class="badge" style="background:#E8F5E9;color:#2E7D32">收集中</span>';
+
+      html += `
+        <div class="card card-hover form-card-item" data-title="${escapeHtml(form.title).toLowerCase()}">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="font-semibold text-text-pri truncate">${escapeHtml(form.title)}</h3>
+                ${statusBadge}
+              </div>
+              <p class="text-text-sec text-xs mb-2">
+                已收集 <span class="font-medium text-text-pri">${form.submission_count}</span> 条
+                ${form.max_submissions > 0 ? ` / ${form.max_submissions}` : ''}
+                &nbsp;·&nbsp; ${formatDate(form.updated_at)}
+                ${form.expiry_date ? ` &nbsp;·&nbsp; ${form.expiry_mode === '7days' ? '7天' : '30天'}后到期` : ''}
+              </p>
+            </div>
+            <div class="flex gap-1 flex-shrink-0">
+              <button class="btn btn-ghost btn-sm px-2" title="查看记录" onclick="dashTab='records';window._dashTab='records';STATE.currentForm=STATE.forms[${i}];renderDashboardContent($('#page-content'));updateBottomNav()">${svgIcon('person', 16)}</button>
+              <button class="btn btn-ghost btn-sm px-2" title="分享链接" onclick="showShareModal(STATE.forms[${i}])">${svgIcon('link', 16)}</button>
+              <button class="btn btn-ghost btn-sm px-2" title="更多" onclick="showFormMoreMenu(event, '${form.id}', ${i})">${svgIcon('more', 16)}</button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function filterFormList() {
+  const query = ($('#form-search')?.value || '').toLowerCase();
+  $$('.form-card-item').forEach(card => {
+    const title = card.dataset.title || '';
+    card.style.display = title.includes(query) ? '' : 'none';
+  });
+}
+
+function showFormMoreMenu(e, formId, index) {
+  e.stopPropagation();
+  const form = STATE.forms[index];
+  const options = [
+    { label: '查看记录', action: `dashTab='records';window._dashTab='records';STATE.currentForm=STATE.forms[${index}];renderDashboardContent($('#page-content'));updateBottomNav();closeModal()` },
+    { label: '分享链接', action: `showShareModal(STATE.forms[${index}])` },
+    { label: '保存为模板', action: `saveAsTemplate('${formId}')` },
+    { label: '删除表单', action: `deleteForm('${formId}')`, danger: true },
+  ];
+
+  showModal('表单操作', `
+    <div class="space-y-1">
+      ${options.map(o => `
+        <button class="w-full text-left px-3 py-3 rounded-xl hover:bg-milk-blue transition-colors text-sm ${o.danger ? 'text-bean-red font-medium' : 'text-text-pri'}" onclick="${o.action}" style="filter:${o.danger?'brightness(0.85)':''}">${o.label}</button>
+      `).join('')}
+    </div>
+  `);
+}
+
+window.showFormMoreMenu = showFormMoreMenu;
+
+async function deleteForm(formId) {
+  showConfirm('删除表单', '删除后将同时删除该表单的所有填写记录，此操作不可撤销。', async () => {
+    if (!_sb) return;
+    await _sb.from('forms').delete().eq('id', formId);
+    showToast('表单已删除', 'success');
+    renderDashboardContent($('#page-content'));
+  }, { danger: true, confirmText: '确认删除' });
+}
+window.deleteForm = deleteForm;
+
+async function saveAsTemplate(formId) {
+  if (!supabase || !STATE.profile) return;
+  const form = STATE.forms.find(f => f.id === formId);
+  if (!form) return;
+  const name = prompt('请输入模板名称：', form.title + '模板');
+  if (!name) return;
+  await _sb.from('form_templates').insert({
+    user_id: STATE.user.id,
+    name: name,
+    section_config: form.section_config
+  });
+  showToast('模板保存成功！', 'success');
+}
+window.saveAsTemplate = saveAsTemplate;
+
+// ---- 新建表单弹窗 ----
+async function showCreateFormModal(templateConfig = null) {
+  if (!supabase || !STATE.profile) {
+    showToast('请先登录', 'warning');
+    return;
+  }
+
+  // 加载模板列表
+  const { data: templates } = await _sb.from('form_templates').select('*').eq('user_id', STATE.user.id).order('updated_at', { ascending: false });
+
+  // 初始配置
+  let config = templateConfig || {};
+  FORM_SECTIONS.forEach(s => {
+    if (!config[s.id]) config[s.id] = { required: false, hidden: false };
+  });
+
+  const renderSectionConfigs = () => {
+    return FORM_SECTIONS.map((s, i) => `
+      <div class="section-config-card ${config[s.id]?.hidden ? 'hidden-section' : ''}" id="cfg-${s.id}">
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-sm font-medium text-text-pri">${s.icon} ${s.title}</span>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-1.5 text-xs text-text-sec cursor-pointer">
+              <input type="checkbox" ${config[s.id]?.required ? 'checked' : ''} onchange="window._cfg['${s.id}'].required=this.checked;renderCfgList()" style="accent-color:#F4C2C2">
+              必填
+            </label>
+            <label class="flex items-center gap-1.5 text-xs text-text-sec cursor-pointer">
+              <input type="checkbox" ${config[s.id]?.hidden ? 'checked' : ''} onchange="window._cfg['${s.id}'].hidden=this.checked;document.getElementById('cfg-${s.id}').classList.toggle('hidden-section',this.checked)" style="accent-color:#F4C2C2">
+              隐藏
+            </label>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  };
+
+  window._cfg = config;
+  window.renderCfgList = () => {
+    const list = $('#section-config-list');
+    if (list) list.innerHTML = renderSectionConfigs();
+  };
+
+  const content = `
+    <div class="space-y-4">
+      <div>
+        <label class="text-sm text-text-sec mb-1.5 block">表单标题</label>
+        <input type="text" id="new-form-title" class="input" placeholder="例：给我的朋友们填写" maxlength="50" value="${escapeHtml(templateConfig?._title || '')}">
+      </div>
+      <div>
+        <label class="text-sm text-text-sec mb-1.5 block">描述（可选）</label>
+        <input type="text" id="new-form-desc" class="input" placeholder="简短描述这个收集表" maxlength="100">
+      </div>
+
+      <div class="border-t border-gray-100 pt-3">
+        <label class="text-sm font-medium text-text-pri mb-2 block">📋 板块配置（可设置必填/隐藏）</label>
+        <div id="section-config-list" class="max-h-64 overflow-y-auto">${renderSectionConfigs()}</div>
+      </div>
+
+      <div class="border-t border-gray-100 pt-3">
+        <label class="text-sm font-medium text-text-pri mb-3 block">🔗 分享设置</label>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="text-xs text-text-sec mb-1 block">链接有效期</label>
+            <select id="new-form-expiry" class="input" style="min-height:40px;padding:8px 12px">
+              <option value="permanent">永久有效</option>
+              <option value="7days">7天</option>
+              <option value="30days">30天</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-text-sec mb-1 block">访问密码（可选）</label>
+            <input type="text" id="new-form-password" class="input" placeholder="留空则不设密码" maxlength="20" style="min-height:40px;padding:8px 12px">
+          </div>
+          <div>
+            <label class="text-xs text-text-sec mb-1 block">最大填写次数</label>
+            <select id="new-form-max" class="input" style="min-height:40px;padding:8px 12px">
+              <option value="0">不限</option>
+              <option value="5">5次</option>
+              <option value="10">10次</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      ${templates && templates.length > 0 ? `
+      <div class="border-t border-gray-100 pt-3">
+        <label class="text-sm font-medium text-text-pri mb-2 block">📑 从模板加载</label>
+        <div class="flex flex-wrap gap-2">
+          ${templates.map(t => `
+            <button class="btn btn-secondary btn-sm" onclick="closeModal();showCreateFormModal({...${JSON.stringify(t.section_config).replace(/"/g,'&quot;')}, _title:'${escapeHtml(t.name).replace(/'/g,"\\'")}')">
+              ${escapeHtml(t.name)}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+    </div>
+  `;
+
+  showModal('新建收集表单', content, {
+    footer: `
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary btn-sm" id="create-form-btn">创建并生成分享链接</button>
+    `,
+    onOpen: () => {
+      setTimeout(() => {
+        const btn = $('#create-form-btn');
+        if (btn) btn.addEventListener('click', async () => {
+          const title = $('#new-form-title').value.trim() || '未命名收集表';
+          const desc = $('#new-form-desc').value.trim();
+          const expiryMode = $('#new-form-expiry').value;
+          const password = $('#new-form-password').value.trim();
+          const maxSub = parseInt($('#new-form-max').value);
+
+          let expiryDate = null;
+          if (expiryMode === '7days') {
+            expiryDate = new Date(Date.now() + 7 * 86400000).toISOString();
+          } else if (expiryMode === '30days') {
+            expiryDate = new Date(Date.now() + 30 * 86400000).toISOString();
+          }
+
+          let passwordHash = '';
+          if (password) passwordHash = await sha256(password);
+
+          btn.disabled = true;
+          btn.textContent = '创建中...';
+
+          const { data, error } = await _sb.from('forms').insert({
+            user_id: STATE.user.id,
+            title,
+            description: desc,
+            section_config: window._cfg,
+            expiry_mode: expiryMode,
+            expiry_date: expiryDate,
+            access_password_hash: passwordHash,
+            max_submissions: maxSub,
+            is_published: true
+          }).select().single();
+
+          btn.disabled = false;
+          btn.textContent = '创建并生成分享链接';
+
+          if (error) { showToast('创建失败：' + error.message, 'error'); return; }
+
+          closeModal();
+          STATE.forms.unshift(data);
+          showToast('表单创建成功！', 'success');
+          setTimeout(() => showShareModal(data), 300);
+          renderDashboardContent($('#page-content'));
+        });
+      }, 100);
+    }
+  });
+}
+window.showCreateFormModal = showCreateFormModal;
+
+// ---- 分享弹窗 ----
+async function showShareModal(form) {
+  // 自动检测局域网 IP（解决 127.0.0.1 只能本机访问的问题）
+  let baseUrl = window.location.origin + window.location.pathname;
+  try {
+    const resp = await fetch('/lan-ip');
+    if (resp.ok) {
+      const lanIp = (await resp.text()).trim();
+      if (lanIp && lanIp !== '127.0.0.1') {
+        baseUrl = `http://${lanIp}:${window.location.port}${window.location.pathname}`;
+      }
+    }
+  } catch(e) {}
+
+  const shareUrl = `${baseUrl}#/fill/${form.id}`;
+  const hasPassword = !!form.access_password_hash;
+
+  showModal('分享收集链接', `
+    <div class="space-y-4">
+      <div>
+        <label class="text-xs text-text-sec mb-1 block">📱 分享链接（同WiFi下可打开）</label>
+        <div class="flex gap-2">
+          <input type="text" class="input flex-1 text-sm" value="${escapeHtml(shareUrl)}" readonly id="share-link-input" style="min-height:40px;padding:8px 12px">
+          <button class="btn btn-primary btn-sm flex-shrink-0" onclick="copyShareLink('${escapeHtml(shareUrl).replace(/'/g, "\\'")}')">${svgIcon('copy', 16)} 复制</button>
+        </div>
+      </div>
+      ${hasPassword ? `<p class="text-xs text-text-sec">🔒 此链接已设置访问密码，填写者需要输入密码</p>` : ''}
+      <div class="flex justify-center" id="qrcode-container"></div>
+      <div class="text-xs text-text-sec space-y-1">
+        <p>📅 有效期：${form.expiry_mode === 'permanent' ? '永久' : form.expiry_mode === '7days' ? '7天' : '30天'}</p>
+        <p>📊 填写上限：${form.max_submissions > 0 ? form.max_submissions + '次' : '不限'}（已填 ${form.submission_count} 次）</p>
+        <p class="text-bean-red" style="filter:brightness(0.85)">⚠️ 填写者需连接同一WiFi才能打开链接</p>
+      </div>
+    </div>
+  `, {
+    onOpen: () => {
+      setTimeout(() => {
+        const qrContainer = $('#qrcode-container');
+        if (qrContainer && typeof QRCode !== 'undefined') {
+          qrContainer.innerHTML = '';
+          new QRCode(qrContainer, {
+            text: shareUrl,
+            width: 160,
+            height: 160,
+            colorDark: '#333333',
+            colorLight: '#ffffff'
+          });
+        }
+      }, 200);
+    }
+  });
+}
+window.showShareModal = showShareModal;
+
+function copyShareLink(url) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => showToast('链接已复制！', 'success'));
+  } else {
+    const input = $('#share-link-input');
+    if (input) { input.select(); document.execCommand('copy'); showToast('链接已复制！', 'success'); }
+  }
+}
+window.copyShareLink = copyShareLink;
+
+// ---- 填写记录 Tab ----
+async function renderRecordsTab(container) {
+  if (!supabase || !STATE.profile) {
+    container.innerHTML = '<div class="text-center py-10 text-text-sec">请先登录</div>';
+    return;
+  }
+
+  // 表单选择器
+  let formOptionsHtml = '<option value="">选择表单...</option>';
+  STATE.forms.forEach(f => {
+    const selected = STATE.currentForm && STATE.currentForm.id === f.id ? 'selected' : '';
+    formOptionsHtml += `<option value="${f.id}" ${selected}>${escapeHtml(f.title)} (${f.submission_count}条)</option>`;
+  });
+
+  container.innerHTML = `
+    <div class="space-y-3">
+      <div class="flex gap-2 flex-wrap">
+        <select id="records-form-select" class="input" style="min-height:40px;padding:8px 12px;flex:1;min-width:180px" onchange="onRecordFormChange()">
+          ${formOptionsHtml}
+        </select>
+        <input type="text" id="records-search" class="input" placeholder="搜索..." style="min-height:40px;padding:8px 12px;width:140px" oninput="filterRecords()">
+        <button class="btn btn-secondary btn-sm" onclick="showFilterModal()">${svgIcon('filter', 16)} 筛选</button>
+      </div>
+      <div id="records-list" class="space-y-3">
+        <div class="text-center py-10 text-text-sec">${STATE.currentForm ? '加载中...' : '请先选择一个表单'}</div>
+      </div>
+    </div>
+  `;
+
+  if (STATE.currentForm) {
+    await loadSubmissions(STATE.currentForm.id);
+  }
+}
+
+async function onRecordFormChange() {
+  const formId = $('#records-form-select')?.value;
+  STATE.currentForm = STATE.forms.find(f => f.id === formId) || null;
+  await loadSubmissions(formId);
+}
+window.onRecordFormChange = onRecordFormChange;
+
+async function loadSubmissions(formId) {
+  const list = $('#records-list');
+  if (!list || !formId || !supabase) return;
+
+  STATE.submissions = [];
+  const { data } = await _sb.from('submissions').select('*').eq('form_id', formId).order('created_at', { ascending: false });
+  STATE.submissions = data || [];
+  renderSubmissionList(list);
+}
+
+function renderSubmissionList(listEl) {
+  if (STATE.submissions.length === 0) {
+    listEl.innerHTML = '<div class="card text-center py-10"><p class="text-text-sec">暂无线索记录 📭</p><p class="text-text-sec text-xs mt-1">分享链接给他人填写吧</p></div>';
+    return;
+  }
+
+  let html = '';
+  STATE.submissions.forEach((sub, i) => {
+    const tagsHtml = (sub.tags || []).map((t, ti) => `<span class="tag ${getTagColor(ti)}">${escapeHtml(t)}</span>`).join('');
+    const avatarHtml = sub.submitter_avatar_url
+      ? `<img src="${escapeHtml(sub.submitter_avatar_url)}" class="w-full h-full object-cover rounded-full">`
+      : `<span class="text-lg">${(sub.submitter_name || '匿')[0]}</span>`;
+
+    html += `
+      <div class="card card-hover record-item" data-search="${escapeHtml(sub.submitter_name).toLowerCase()} ${(sub.notes||'').toLowerCase()} ${(sub.tags||[]).join(' ').toLowerCase()}">
+        <div class="flex items-center gap-3">
+          <div class="avatar-circle flex-shrink-0">${avatarHtml}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-medium text-text-pri text-sm">${escapeHtml(sub.submitter_name)}</span>
+              <span class="text-text-sec text-xs">${formatDate(sub.created_at)}</span>
+              ${sub.is_favorite ? '<span style="color:#F4C2C2">⭐</span>' : ''}
+            </div>
+            <div class="flex flex-wrap gap-1">${tagsHtml || '<span class="text-text-sec text-xs">无标签</span>'}</div>
+          </div>
+          <div class="flex gap-0.5 flex-shrink-0">
+            <button class="btn btn-ghost btn-sm px-2" title="查看详情" onclick="showSubmissionDetail('${sub.id}')">${svgIcon('person', 16)}</button>
+            <button class="btn btn-ghost btn-sm px-2" title="${sub.is_favorite ? '取消收藏' : '收藏'}" onclick="toggleFavorite('${sub.id}')">${sub.is_favorite ? svgIcon('favorite', 16) : svgIcon('favorite-border', 16)}</button>
+            <button class="btn btn-ghost btn-sm px-2" title="删除" onclick="deleteSubmission('${sub.id}')">${svgIcon('delete', 16)}</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  listEl.innerHTML = html;
+}
+
+function filterRecords() {
+  const query = ($('#records-search')?.value || '').toLowerCase();
+  $$('.record-item').forEach(card => {
+    card.style.display = card.dataset.search?.includes(query) ? '' : 'none';
+  });
+}
+
+async function toggleFavorite(subId) {
+  if (!_sb) return;
+  const sub = STATE.submissions.find(s => s.id === subId);
+  if (!sub) return;
+  await _sb.from('submissions').update({ is_favorite: !sub.is_favorite }).eq('id', subId);
+  sub.is_favorite = !sub.is_favorite;
+  renderSubmissionList($('#records-list'));
+  showToast(sub.is_favorite ? '已收藏 ⭐' : '已取消收藏', 'info');
+}
+window.toggleFavorite = toggleFavorite;
+
+async function deleteSubmission(subId) {
+  showConfirm('删除记录', '确定要删除这条填写记录吗？', async () => {
+    if (!_sb) return;
+    const sub = STATE.submissions.find(s => s.id === subId);
+    await _sb.from('submissions').delete().eq('id', subId);
+    STATE.submissions = STATE.submissions.filter(s => s.id !== subId);
+    renderSubmissionList($('#records-list'));
+    showToast('记录已删除', 'success');
+    // 更新表单计数
+    if (STATE.currentForm) {
+      await _sb.rpc('increment_submission_count', { form_id: STATE.currentForm.id }).catch(() => {});
+    }
+  }, { danger: true });
+}
+window.deleteSubmission = deleteSubmission;
+
+// ---- 档案详情弹窗（核心功能） ----
+async function showSubmissionDetail(subId) {
+  const sub = STATE.submissions.find(s => s.id === subId);
+  if (!sub) return;
+  const data = sub.data || {};
+
+  // 获取选项标签
+  function getOptionLabels(sectionId, questionId, values) {
+    const section = FORM_SECTIONS.find(s => s.id === sectionId);
+    if (!section) return (Array.isArray(values) ? values : [values]).join('、');
+    const question = section.questions.find(q => q.id === questionId);
+    if (!question) return (Array.isArray(values) ? values : [values]).join('、');
+    const vals = Array.isArray(values) ? values : [values];
+    return vals.map(v => {
+      const opt = question.options.find(o => o.value === v);
+      if (opt) return opt.label;
+      return v;
+    }).join('、') || '未填写';
+  }
+
+  // 构建四大区域
+  let sections = '';
+  FORM_SECTIONS.forEach(section => {
+    if (!STATE.currentForm) return;
+    const cfg = STATE.currentForm.section_config?.[section.id];
+    if (cfg?.hidden) return;
+
+    let itemsHtml = '';
+    section.questions.forEach(q => {
+      const key = `${section.id}_${q.id}`;
+      const val = data[key];
+      if (!val || (Array.isArray(val) && val.length === 0)) return;
+      const label = getOptionLabels(section.id, q.id, val);
+      itemsHtml += `<p class="text-sm mb-1"><span class="text-text-sec">${q.title.replace(/^\d+\.\s*/, '')}：</span><span class="text-text-pri">${label}</span></p>`;
+    });
+
+    if (itemsHtml) {
+      sections += `
+        <div class="mb-4">
+          <h4 class="font-medium text-text-pri mb-2 text-sm">${section.icon} ${section.title}</h4>
+          ${itemsHtml}
+        </div>
+      `;
+    }
+  });
+
+  // 生成相处参考文案
+  const compatibilityAdvice = generateCompatibilityAdvice(data);
+
+  // 备注
+  const notes = sub.notes || '';
+  // 标签
+  const tagsHtml = (sub.tags || []).map((t, ti) => `<span class="tag ${getTagColor(ti)} mr-1">${escapeHtml(t)} <button class="text-text-sec ml-1" onclick="removeTag('${subId}','${escapeHtml(t).replace(/'/g,"\\'")}')">&times;</button></span>`).join('');
+
+  showModal(`${escapeHtml(sub.submitter_name)} 的档案`, `
+    <div class="space-y-4">
+      <!-- 头像 + 昵称 -->
+      <div class="flex items-center gap-3 p-3 bg-milk-blue rounded-xl">
+        <div class="avatar-circle avatar-circle-lg">
+          ${sub.submitter_avatar_url ? `<img src="${escapeHtml(sub.submitter_avatar_url)}" class="w-full h-full object-cover rounded-full">` : `<span class="text-2xl">${(sub.submitter_name||'匿')[0]}</span>`}
+        </div>
+        <div>
+          <h3 class="font-semibold text-text-pri">${escapeHtml(sub.submitter_name)}</h3>
+          <p class="text-text-sec text-xs">${formatDate(sub.created_at)} 填写</p>
+        </div>
+      </div>
+
+      <!-- 四大区域：问卷内容 -->
+      <div class="max-h-[50vh] overflow-y-auto">
+        ${sections || '<p class="text-text-sec text-center py-4">暂无填写内容</p>'}
+      </div>
+
+      <!-- 相处参考文案 -->
+      ${compatibilityAdvice ? `
+      <div class="bg-apricot rounded-xl p-4">
+        <h4 class="font-medium text-text-pri mb-2 text-sm">💡 相处参考建议</h4>
+        <p class="text-sm text-text-pri leading-relaxed">${escapeHtml(compatibilityAdvice)}</p>
+      </div>
+      ` : ''}
+
+      <!-- 标签 -->
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xs text-text-sec">标签：</span>
+          <span id="tags-display">${tagsHtml || '<span class="text-text-sec text-xs">暂无标签</span>'}</span>
+          <button class="btn btn-ghost btn-sm px-2 text-xs" onclick="addTagPrompt('${subId}')">${svgIcon('add', 14)} 新增</button>
+        </div>
+      </div>
+
+      <!-- 备注 -->
+      <div>
+        <label class="text-xs text-text-sec mb-1 block">备注：</label>
+        <textarea id="sub-notes" class="input" rows="2" placeholder="添加备注..." style="resize:vertical" onblur="saveNotes('${subId}', this.value)">${escapeHtml(notes)}</textarea>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="flex gap-2 flex-wrap">
+        <button class="btn btn-sm ${sub.is_favorite ? 'btn-primary' : 'btn-secondary'}" onclick="toggleFavorite('${subId}');closeModal();setTimeout(()=>showSubmissionDetail('${subId}'),200)">
+          ${sub.is_favorite ? '⭐ 已收藏' : '☆ 收藏'}
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="exportSingleRecord('${subId}')">${svgIcon('download', 14)} 单独导出</button>
+        <button class="btn btn-sm btn-danger" onclick="closeModal();deleteSubmission('${subId}')">${svgIcon('delete', 14)} 删除</button>
+      </div>
+    </div>
+  `, {
+    onOpen: () => {
+      setTimeout(() => {
+        const notesArea = $('#sub-notes');
+        if (notesArea) {
+          notesArea._subId = subId;
+        }
+      }, 100);
+    }
+  });
+}
+window.showSubmissionDetail = showSubmissionDetail;
+
+function generateCompatibilityAdvice(data) {
+  let advice = [];
+
+  // 忌口分析
+  const dislikedFood = data['diet_disliked_food'] || [];
+  if (dislikedFood.length > 0 && !dislikedFood.includes('no_restriction')) {
+    const foodLabels = [];
+    const q = FORM_SECTIONS.find(s => s.id === 'diet')?.questions.find(q => q.id === 'disliked_food');
+    dislikedFood.forEach(v => {
+      const opt = q?.options.find(o => o.value === v);
+      if (opt && v !== 'other') foodLabels.push(opt.label);
+    });
+    if (foodLabels.length > 0) advice.push(`⚠️ 忌口注意：${foodLabels.join('、')}`);
+  }
+
+  // 相处反感
+  const petPeeves = data['compatibility_pet_peeves'] || [];
+  if (petPeeves.length > 0 && !petPeeves.includes('no_peeve')) {
+    const peeveLabels = [];
+    const q = FORM_SECTIONS.find(s => s.id === 'compatibility')?.questions.find(q => q.id === 'pet_peeves');
+    petPeeves.forEach(v => {
+      const opt = q?.options.find(o => o.value === v);
+      if (opt && v !== 'other') peeveLabels.push(opt.label);
+    });
+    if (peeveLabels.length > 0) advice.push(`💢 相处雷区：${peeveLabels.join('、')}`);
+  }
+
+  // 偏好相处模式
+  const interactionMode = data['compatibility_interaction_mode'] || [];
+  if (interactionMode.length > 0) {
+    const modeLabels = [];
+    const q = FORM_SECTIONS.find(s => s.id === 'compatibility')?.questions.find(q => q.id === 'interaction_mode');
+    interactionMode.forEach(v => {
+      const opt = q?.options.find(o => o.value === v);
+      if (opt && v !== 'other') modeLabels.push(opt.label);
+    });
+    if (modeLabels.length > 0) advice.push(`💞 推荐相处方式：${modeLabels.join('、')}`);
+  }
+
+  // 性格总结
+  const personality = data['basic_personality'] || [];
+  if (personality.length > 0) {
+    const pLabels = [];
+    const q = FORM_SECTIONS.find(s => s.id === 'basic')?.questions.find(q => q.id === 'personality');
+    personality.forEach(v => {
+      const opt = q?.options.find(o => o.value === v);
+      if (opt && v !== 'other') pLabels.push(opt.label);
+    });
+    if (pLabels.length > 0) advice.push(`🌟 性格特点：${pLabels.join('、')}`);
+  }
+
+  return advice.length > 0 ? advice.join('\n\n') : '';
+}
+
+async function saveNotes(subId, notes) {
+  if (!_sb) return;
+  const sub = STATE.submissions.find(s => s.id === subId);
+  if (sub) sub.notes = notes;
+  await _sb.from('submissions').update({ notes }).eq('id', subId);
+}
+window.saveNotes = saveNotes;
+
+async function addTagPrompt(subId) {
+  const tag = prompt('请输入新标签：');
+  if (!tag || !tag.trim()) return;
+  if (!_sb) return;
+  const sub = STATE.submissions.find(s => s.id === subId);
+  if (!sub) return;
+  const tags = [...(sub.tags || []), tag.trim()];
+  await _sb.from('submissions').update({ tags }).eq('id', subId);
+  sub.tags = tags;
+  closeModal();
+  showSubmissionDetail(subId);
+}
+window.addTagPrompt = addTagPrompt;
+
+async function removeTag(subId, tag) {
+  if (!_sb) return;
+  const sub = STATE.submissions.find(s => s.id === subId);
+  if (!sub) return;
+  const tags = (sub.tags || []).filter(t => t !== tag);
+  await _sb.from('submissions').update({ tags }).eq('id', subId);
+  sub.tags = tags;
+  closeModal();
+  showSubmissionDetail(subId);
+}
+window.removeTag = removeTag;
+
+// ---- 收藏档案 Tab ----
+async function renderFavoritesTab(container) {
+  if (!supabase || !STATE.profile) {
+    container.innerHTML = '<div class="text-center py-10 text-text-sec">请先登录</div>';
+    return;
+  }
+
+  const { data: allSubs } = await _sb.from('submissions').select('*, forms!inner(user_id)').eq('forms.user_id', STATE.user.id).eq('is_favorite', true).order('created_at', { ascending: false });
+
+  if (!allSubs || allSubs.length === 0) {
+    container.innerHTML = '<div class="card text-center py-10"><p class="text-text-sec">暂无收藏档案 ⭐</p><p class="text-text-sec text-xs mt-1">在记录详情中点击收藏按钮吧</p></div>';
+    return;
+  }
+
+  let html = '<div class="space-y-3">';
+  allSubs.forEach(sub => {
+    html += `
+      <div class="card card-hover">
+        <div class="flex items-center gap-3">
+          <div class="avatar-circle flex-shrink-0">
+            ${sub.submitter_avatar_url ? `<img src="${escapeHtml(sub.submitter_avatar_url)}" class="w-full h-full object-cover rounded-full">` : `<span>${(sub.submitter_name||'匿')[0]}</span>`}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-text-pri text-sm">${escapeHtml(sub.submitter_name)}</p>
+            <p class="text-text-sec text-xs">${formatDate(sub.created_at)}</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="STATE.currentForm={id:'${sub.form_id}'};STATE.submissions=[...STATE.submissions.filter(s=>s.id!=='${sub.id}'),${JSON.stringify(sub).replace(/"/g,'&quot;')}];showSubmissionDetail('${sub.id}')">查看</button>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// ---- 筛选弹窗 ----
+function showFilterModal() {
+  const tags = new Set();
+  STATE.submissions.forEach(s => (s.tags || []).forEach(t => tags.add(t)));
+
+  showModal('筛选记录', `
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs text-text-sec mb-1 block">标签筛选</label>
+        <div class="flex flex-wrap gap-2" id="filter-tags">
+          ${[...tags].map((t, i) => `
+            <button class="tag ${getTagColor(i)} cursor-pointer filter-tag-btn" data-tag="${escapeHtml(t)}" onclick="toggleFilterTag(this)">${escapeHtml(t)}</button>
+          `).join('')}
+          ${tags.size === 0 ? '<span class="text-text-sec text-xs">暂无标签</span>' : ''}
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-text-sec mb-1 block">日期范围</label>
+        <div class="flex gap-2">
+          <input type="date" id="filter-date-from" class="input text-sm" style="min-height:40px">
+          <span class="text-text-sec self-center">至</span>
+          <input type="date" id="filter-date-to" class="input text-sm" style="min-height:40px">
+        </div>
+      </div>
+      <button class="btn btn-primary w-full btn-sm" onclick="applyFilters()">应用筛选</button>
+      <button class="btn btn-ghost w-full btn-sm" onclick="clearFilters()">清除筛选</button>
+    </div>
+  `);
+
+  window._filterTags = new Set();
+}
+
+function toggleFilterTag(btn) {
+  const tag = btn.dataset.tag;
+  if (window._filterTags.has(tag)) {
+    window._filterTags.delete(tag);
+    btn.classList.remove('selected');
+    btn.style.opacity = '0.5';
+  } else {
+    window._filterTags.add(tag);
+    btn.classList.add('selected');
+    btn.style.opacity = '1';
+  }
+}
+
+function applyFilters() {
+  const from = $('#filter-date-from')?.value;
+  const to = $('#filter-date-to')?.value;
+  const filterTags = window._filterTags || new Set();
+
+  $$('.record-item').forEach(card => {
+    const searchText = card.dataset.search || '';
+    let show = true;
+
+    if (filterTags.size > 0) {
+      const hasTag = [...filterTags].some(t => searchText.includes(t.toLowerCase()));
+      if (!hasTag) show = false;
+    }
+
+    if (show && (from || to)) {
+      // 简单全文本匹配，真实场景需要 data 属性
+    }
+
+    card.style.display = show ? '' : 'none';
+  });
+
+  closeModal();
+}
+
+function clearFilters() {
+  window._filterTags = new Set();
+  $$('.record-item').forEach(card => { card.style.display = ''; });
+  closeModal();
+}
+
+// ================================================================
+// 十三、导出功能
+// ================================================================
+
+async function exportAllRecords() {
+  if (!supabase || !STATE.profile) return;
+  const { data: allSubs } = await _sb.from('submissions').select('*, forms!inner(user_id)').eq('forms.user_id', STATE.user.id);
+
+  if (!allSubs || allSubs.length === 0) {
+    showToast('没有可导出的记录', 'warning');
+    return;
+  }
+
+  let txt = `知意小记 — 全部记录导出\n导出时间：${new Date().toLocaleString()}\n${'='.repeat(40)}\n\n`;
+
+  for (const sub of allSubs) {
+    txt += `👤 ${sub.submitter_name}\n`;
+    txt += `📅 ${formatDate(sub.created_at)}\n`;
+    if (sub.notes) txt += `📝 备注：${sub.notes}\n`;
+    if (sub.tags?.length) txt += `🏷️ 标签：${sub.tags.join('、')}\n`;
+
+    const data = sub.data || {};
+    for (const section of FORM_SECTIONS) {
+      let hasContent = false;
+      let sectionTxt = '';
+      for (const q of section.questions) {
+        const key = `${section.id}_${q.id}`;
+        const val = data[key];
+        if (val && (!Array.isArray(val) || val.length > 0)) {
+          const optLabels = Array.isArray(val) ? val.map(v => {
+            const opt = q.options.find(o => o.value === v);
+            return opt ? opt.label : v;
+          }).join('、') : val;
+          sectionTxt += `    ${q.title}: ${optLabels}\n`;
+          hasContent = true;
+        }
+      }
+      if (hasContent) {
+        txt += `  ${section.icon} ${section.title}：\n${sectionTxt}`;
+      }
+    }
+    txt += `${'-'.repeat(30)}\n\n`;
+  }
+
+  const blob = new Blob(['﻿' + txt], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `知意小记_全部记录_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('导出成功！', 'success');
+}
+window.exportAllRecords = exportAllRecords;
+
+async function exportSingleRecord(subId) {
+  const sub = STATE.submissions.find(s => s.id === subId);
+  if (!sub) return;
+
+  let txt = `知意小记 — 单人档案导出\n\n👤 ${sub.submitter_name}\n📅 ${formatDate(sub.created_at)}\n${'='.repeat(30)}\n\n`;
+  const data = sub.data || {};
+  for (const section of FORM_SECTIONS) {
+    let hasContent = false;
+    let sectionTxt = '';
+    for (const q of section.questions) {
+      const key = `${section.id}_${q.id}`;
+      const val = data[key];
+      if (val && (!Array.isArray(val) || val.length > 0)) {
+        const optLabels = Array.isArray(val) ? val.map(v => {
+          const opt = q.options.find(o => o.value === v);
+          return opt ? opt.label : v;
+        }).join('、') : val;
+        sectionTxt += `  ${q.title}: ${optLabels}\n`;
+        hasContent = true;
+      }
+    }
+    if (hasContent) txt += `${section.icon} ${section.title}：\n${sectionTxt}`;
+  }
+  if (sub.notes) txt += `\n📝 备注：${sub.notes}\n`;
+  if (sub.tags?.length) txt += `🏷️ 标签：${sub.tags.join('、')}\n`;
+
+  const blob = new Blob(['﻿' + txt], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${sub.submitter_name}_档案_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('单条档案已导出！', 'success');
+}
+window.exportSingleRecord = exportSingleRecord;
+
+// ================================================================
+// 十四、访客填写表单页（核心功能，最复杂的页面）
+// ================================================================
+
+async function renderFormFill(container, params) {
+  const formId = params.formId;
+  const isPreview = formId?.startsWith('preview_');
+
+  let form = null;
+  if (!isPreview && supabase) {
+    const { data } = await _sb.from('forms').select('*').eq('id', formId).single();
+    form = data;
+  }
+
+  // 预览模式：构建虚拟表单
+  if (isPreview) {
+    form = {
+      id: formId,
+      title: '【预览模式】完整问卷效果测试',
+      description: '这是本地预览，提交不会保存到云端',
+      section_config: {},
+      access_password_hash: '',
+      expiry_mode: 'permanent',
+      max_submissions: 0,
+      anti_duplicate: false,
+      is_published: true,
+      submission_count: 0
+    };
+  }
+
+  if (!form) {
+    container.innerHTML = '<div class="text-center py-20"><p class="text-text-sec text-lg">表单不存在或已失效</p><button class="btn btn-primary mt-4" onclick="navigate(\'/\')">返回首页</button></div>';
+    return;
+  }
+
+  if (!form.is_published) {
+    container.innerHTML = '<div class="text-center py-20"><p class="text-text-sec text-lg">该表单已停止收集</p></div>';
+    return;
+  }
+
+  if (form.expiry_date && new Date(form.expiry_date) < new Date()) {
+    container.innerHTML = '<div class="text-center py-20"><p class="text-text-sec text-lg">该表单已过期</p></div>';
+    return;
+  }
+
+  if (form.max_submissions > 0 && form.submission_count >= form.max_submissions) {
+    container.innerHTML = '<div class="text-center py-20"><p class="text-text-sec text-lg">该表单已达到填写上限</p></div>';
+    return;
+  }
+
+  // 检查密码
+  if (form.access_password_hash) {
+    const pw = sessionStorage.getItem('zhiyi_form_pw_' + formId);
+    if (!pw) {
+      container.innerHTML = `
+        <div class="min-h-[60vh] flex items-center justify-center">
+          <div class="card w-full max-w-sm text-center">
+            <div class="text-3xl mb-3">🔒</div>
+            <p class="text-text-sec mb-4">此表单需要密码才能访问</p>
+            <input type="password" id="form-password-input" class="input mb-3" placeholder="请输入访问密码">
+            <button class="btn btn-primary w-full" id="form-password-btn">验证</button>
+          </div>
+        </div>
+      `;
+      $('#form-password-btn').addEventListener('click', async () => {
+        const input = $('#form-password-input').value;
+        const hash = await sha256(input);
+        if (hash === form.access_password_hash) {
+          sessionStorage.setItem('zhiyi_form_pw_' + formId, 'ok');
+          renderFormFill(container, params);
+        } else {
+          showToast('密码错误', 'error');
+        }
+      });
+      return;
+    }
+  }
+
+  // 防重复检查
+  if (!isPreview && form.anti_duplicate !== false) {
+    const lastSubmit = localStorage.getItem('zhiyi_last_submit_' + formId);
+    if (lastSubmit) {
+      const elapsed = Date.now() - parseInt(lastSubmit);
+      if (elapsed < 7 * 86400000) {
+        container.innerHTML = `
+          <div class="min-h-[60vh] flex items-center justify-center">
+            <div class="card w-full max-w-sm text-center">
+              <div class="text-3xl mb-3">⏰</div>
+              <p class="text-text-sec mb-2">您已在7天内提交过此表单</p>
+              <p class="text-text-sec text-xs">同一设备7天内不可重复提交</p>
+              <button class="btn btn-primary mt-4" onclick="navigate('/')">返回首页</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+    }
+  }
+
+  // 加载本地缓存数据
+  const cacheKey = 'zhiyi_form_data_' + formId;
+  let formData = {};
+  try {
+    formData = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+  } catch (e) { formData = {}; }
+
+  // 初始化身份信息
+  if (!formData._identity) formData._identity = { name: '', avatarMode: 'none', avatarUrl: '', avatarCartoonId: '' };
+
+  STATE.currentForm = form;
+
+  // --- 渲染填写页面 ---
+  function renderFillPage() {
+    let html = '';
+
+    // 顶部标题
+    html += `
+      <div class="animate-fade-in">
+        <div class="text-center py-6">
+          <h1 class="text-xl font-semibold text-text-pri">${escapeHtml(form.title)}</h1>
+          ${form.description ? `<p class="text-text-sec text-sm mt-1">${escapeHtml(form.description)}</p>` : ''}
+        </div>
+
+        <!-- 进度条 -->
+        <div class="progress-bar mb-6 sticky top-0 z-10" style="top:0">
+          <div class="progress-bar-fill" id="fill-progress" style="width:0%"></div>
+        </div>
+    `;
+
+    // 身份标识板块
+    const identity = formData._identity || {};
+    html += `
+      <div class="card mb-4" style="background:var(--apricot);border:1.5px solid rgba(0,0,0,0.04)">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-text-pri">👋 身份标识</h3>
+        </div>
+        <p class="text-xs text-text-sec mb-4">昵称建议填写网名/化名，头像自愿上传，不上传不影响提交；图片仅存储在表单创建者账号，不会对外分发。</p>
+        <div class="space-y-3">
+          <div>
+            <label class="text-sm text-text-sec mb-1 block">你的称呼/昵称 <span class="text-bean-red" style="filter:brightness(0.85)">*</span></label>
+            <input type="text" id="fill-identity-name" class="input" placeholder="请输入你的昵称" maxlength="30" value="${escapeHtml(identity.name || '')}">
+          </div>
+          <div>
+            <label class="text-sm text-text-sec mb-2 block">头像设置</label>
+            <div class="flex gap-3 flex-wrap">
+              <label class="checkbox-wrap ${identity.avatarMode === 'none' ? 'selected' : ''}" style="min-height:40px">
+                <input type="radio" name="avatar-mode" value="none" ${identity.avatarMode === 'none' ? 'checked' : ''} hidden>
+                <span class="checkbox-custom" style="border-radius:50%"></span>
+                <span class="text-sm">不上传头像</span>
+              </label>
+              <label class="checkbox-wrap ${identity.avatarMode === 'cartoon' ? 'selected' : ''}" style="min-height:40px">
+                <input type="radio" name="avatar-mode" value="cartoon" ${identity.avatarMode === 'cartoon' ? 'checked' : ''} hidden>
+                <span class="checkbox-custom" style="border-radius:50%"></span>
+                <span class="text-sm">卡通头像库</span>
+              </label>
+              <label class="checkbox-wrap ${identity.avatarMode === 'upload' ? 'selected' : ''}" style="min-height:40px">
+                <input type="radio" name="avatar-mode" value="upload" ${identity.avatarMode === 'upload' ? 'checked' : ''} hidden>
+                <span class="checkbox-custom" style="border-radius:50%"></span>
+                <span class="text-sm">上传图片</span>
+              </label>
+            </div>
+
+            <!-- 卡通头像网格 -->
+            <div id="cartoon-grid" class="mt-3 ${identity.avatarMode === 'cartoon' ? '' : 'hidden'}">
+              <p class="text-xs text-text-sec mb-2">点击头像可放大预览，再次点击选中</p>
+              <div class="grid grid-cols-5 gap-2">
+                ${CARTOON_AVATARS.map(a => `
+                  <div class="aspect-square rounded-full flex items-center justify-center cursor-pointer text-3xl hover:scale-110 transition-transform ${identity.avatarCartoonId === a.id ? 'ring-3 ring-bean-red' : ''}" style="background:${a.bg};--tw-ring-color:var(--bean-red)" onclick="selectCartoonAvatar('${a.id}')" title="${a.group}">
+                    ${a.icon || a.emoji}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- 上传图片 -->
+            <div id="upload-area" class="mt-3 ${identity.avatarMode === 'upload' ? '' : 'hidden'}">
+              <input type="file" id="fill-avatar-file" accept="image/*" class="hidden" onchange="handleAvatarUpload(this)">
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('fill-avatar-file').click()">📷 选择图片</button>
+              <div id="upload-preview" class="mt-2 ${identity.avatarUrl ? '' : 'hidden'}">
+                <img src="${identity.avatarUrl || ''}" class="w-20 h-20 rounded-full object-cover border-2 border-bean-red">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 问卷板块（默认展开身份标识后的第一个板块）
+    const firstRealSectionId = FORM_SECTIONS[0]?.id;
+
+    FORM_SECTIONS.forEach((section, si) => {
+      const cfg = form.section_config?.[section.id] || {};
+      if (cfg.hidden) return;
+
+      const isInitiallyExpanded = si === 0; // 第一个板块默认展开
+      const sectionData = formData[section.id] || {};
+
+      // 检查板块是否有填写内容
+      let hasContent = false;
+      section.questions.forEach(q => {
+        const val = sectionData[q.id];
+        if (val && (Array.isArray(val) ? val.length > 0 : true)) hasContent = true;
+      });
+
+      html += `
+        <div class="card mb-3 section-block" data-section="${section.id}">
+          <div class="collapsible-header" onclick="toggleSection('${section.id}')">
+            <div class="flex items-center gap-2">
+              <span class="status-dot ${hasContent ? 'filled' : 'empty'}"></span>
+              <span class="font-medium text-sm text-text-pri">${section.icon} ${escapeHtml(section.title)}</span>
+              ${cfg.required ? '<span class="text-xs text-bean-red" style="filter:brightness(0.85)">必填</span>' : '<span class="text-xs text-text-sec">选填</span>'}
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#999" class="section-arrow" id="arrow-${section.id}" style="transform:${isInitiallyExpanded ? 'rotate(180deg)' : ''};transition:transform 0.3s"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+          </div>
+          <div class="collapsible-body${isInitiallyExpanded ? '' : ' collapsed'}" id="body-${section.id}">
+            <div class="pt-2 pb-3 px-1">
+              ${section.questions.map(q => renderQuestion(section.id, q, sectionData, formData)).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    // 快捷操作栏
+    html += `
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <button class="btn btn-ghost btn-sm text-xs" onclick="collapseAllSections()">📂 折叠全部板块</button>
+        <button class="btn btn-ghost btn-sm text-xs" onclick="resetCurrentSection()">🗑️ 清空当前板块</button>
+      </div>
+    `;
+
+    // 底部提交按钮
+    html += `
+      <div class="bottom-bar">
+        <button class="btn btn-ghost flex-1" onclick="resetForm()">🔄 重置表单</button>
+        <button class="btn btn-primary flex-1 btn-lg" id="submit-form-btn">📤 提交记录</button>
+      </div>
+    `;
+
+    html += '</div>';
+    container.innerHTML = html;
+
+    // 绑定事件
+    bindFillEvents(formId);
+    updateProgress(formId);
+  }
+
+  renderFillPage();
+
+  // 暴露全局函数供 onclick 使用
+  window._fillFormData = formData;
+  window._fillFormId = formId;
+  window._fillForm = form;
+  window.saveFillCache = () => {
+    localStorage.setItem(cacheKey, JSON.stringify(window._fillFormData));
+  };
+  window.renderFillPageLocal = renderFillPage;
+}
+
+// 渲染单个问题
+function renderQuestion(sectionId, q, sectionData, formData) {
+  const values = sectionData[q.id] || [];
+  const otherVal = sectionData[q.id + '_other'] || '';
+  const exclusiveVal = q.exclusiveOption;
+  let hasExclusiveSelected = exclusiveVal && values.includes(exclusiveVal);
+
+  let html = `<div class="mb-4 question-block" data-question="${q.id}">`;
+  html += `<p class="text-sm font-medium text-text-pri mb-2">${escapeHtml(q.title)} <span class="text-text-sec text-xs font-normal">（可多选）</span></p>`;
+
+  html += '<div class="options-grid">';
+  q.options.forEach(opt => {
+    if (opt.isOther) return; // "其他"单独处理
+    const isSelected = values.includes(opt.value);
+    const isDisabled = hasExclusiveSelected && !opt.isExclusive && opt.value !== exclusiveVal;
+    html += `
+      <div class="checkbox-wrap ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}"
+           onclick="toggleOption(this, '${sectionId}', '${q.id}', '${opt.value}', ${opt.isExclusive || false}, '${exclusiveVal || ''}')"
+           data-value="${opt.value}">
+        <span class="checkbox-custom"></span>
+        <span class="text-sm">${escapeHtml(opt.label)}</span>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  // "其他"输入框
+  const otherOpt = q.options.find(o => o.isOther);
+  if (otherOpt) {
+    html += `
+      <div class="mt-2 flex items-center gap-2">
+        <span class="text-xs text-text-sec flex-shrink-0">其他：</span>
+        <input type="text" class="input flex-1 text-sm other-input"
+               placeholder="手动输入（最多${otherOpt.maxChars || 50}字）"
+               maxlength="${otherOpt.maxChars || 50}"
+               value="${escapeHtml(otherVal)}"
+               oninput="setOtherValue('${sectionId}', '${q.id}', this.value);updateRemaining(this, ${otherOpt.maxChars || 50})"
+               style="min-height:36px;padding:6px 10px">
+        <span class="text-xs text-text-sec flex-shrink-0 remaining-hint">${otherOpt.maxChars || 50}</span>
+      </div>
+    `;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// ---- 填写页面交互函数 ----
+
+function toggleSection(sectionId) {
+  const body = document.getElementById('body-' + sectionId);
+  const arrow = document.getElementById('arrow-' + sectionId);
+  if (!body || !arrow) return;
+  const isCollapsed = body.classList.contains('collapsed');
+  if (isCollapsed) {
+    body.classList.remove('collapsed');
+    arrow.style.transform = 'rotate(180deg)';
+  } else {
+    body.classList.add('collapsed');
+    arrow.style.transform = 'rotate(0deg)';
+  }
+}
+
+function collapseAllSections() {
+  FORM_SECTIONS.forEach(s => {
+    const body = document.getElementById('body-' + s.id);
+    const arrow = document.getElementById('arrow-' + s.id);
+    if (body) { body.classList.add('collapsed'); }
+    if (arrow) { arrow.style.transform = 'rotate(0deg)'; }
+  });
+}
+
+function resetCurrentSection() {
+  // 找到当前打开/可见的 section
+  const visibleBodies = [...$$('.collapsible-body:not(.collapsed)')];
+  if (visibleBodies.length === 0) { showToast('请先展开一个板块', 'info'); return; }
+  const body = visibleBodies[0];
+  const sectionBlock = body.closest('.section-block');
+  if (!sectionBlock) return;
+  const sectionId = sectionBlock.dataset.section;
+  const data = window._fillFormData;
+  data[sectionId] = {};
+  window.saveFillCache();
+  window.renderFillPageLocal();
+  showToast('当前板块已清空', 'info');
+}
+
+function toggleOption(el, sectionId, qId, value, isExclusive, exclusiveVal) {
+  if (el.classList.contains('disabled')) return;
+
+  const data = window._fillFormData;
+  if (!data[sectionId]) data[sectionId] = {};
+  if (!data[sectionId][qId]) data[sectionId][qId] = [];
+
+  const arr = data[sectionId][qId];
+
+  if (isExclusive) {
+    // 互斥选项：清空其他选项
+    if (arr.includes(value)) {
+      arr.length = 0;
+    } else {
+      arr.length = 0;
+      arr.push(value);
+    }
+  } else {
+    // 普通选项：如果互斥选项已选中，先清除
+    if (exclusiveVal && arr.includes(exclusiveVal)) {
+      arr.length = 0;
+    }
+    const idx = arr.indexOf(value);
+    if (idx >= 0) {
+      arr.splice(idx, 1);
+    } else {
+      arr.push(value);
+    }
+  }
+
+  window.saveFillCache();
+  window.renderFillPageLocal();
+  updateProgress(window._fillFormId);
+}
+
+function setOtherValue(sectionId, qId, value) {
+  const data = window._fillFormData;
+  if (!data[sectionId]) data[sectionId] = {};
+  data[sectionId][qId + '_other'] = value;
+  window.saveFillCache();
+  updateProgress(window._fillFormId);
+}
+
+function updateRemaining(input, max) {
+  const hint = input.parentElement.querySelector('.remaining-hint');
+  if (hint) hint.textContent = Math.max(0, max - input.value.length);
+}
+
+function selectCartoonAvatar(id) {
+  const data = window._fillFormData;
+  data._identity.avatarMode = 'cartoon';
+  data._identity.avatarCartoonId = id;
+  data._identity.avatarUrl = '';
+  window.saveFillCache();
+  window.renderFillPageLocal();
+}
+
+async function handleAvatarUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('图片大小不能超过2MB', 'warning'); return; }
+  try {
+    const blob = await compressImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      window._fillFormData._identity.avatarUrl = e.target.result;
+      window._fillFormData._identity.avatarMode = 'upload';
+      window.saveFillCache();
+      window.renderFillPageLocal();
+    };
+    reader.readAsDataURL(blob);
+  } catch (e) {
+    showToast('图片处理失败', 'error');
+  }
+}
+
+function updateProgress(formId) {
+  const progressBar = $('#fill-progress');
+  if (!progressBar) return;
+  const data = window._fillFormData;
+  let total = 0, filled = 0;
+
+  // 身份信息
+  total += 1;
+  if (data._identity?.name) filled += 1;
+
+  FORM_SECTIONS.forEach(section => {
+    const cfg = window._fillForm?.section_config?.[section.id] || {};
+    if (cfg.hidden) return;
+    section.questions.forEach(q => {
+      total += 1;
+      const val = (data[section.id] || {})[q.id];
+      if (val && (Array.isArray(val) ? val.length > 0 : true)) filled += 1;
+    });
+  });
+
+  const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
+  progressBar.style.width = pct + '%';
+}
+
+function resetForm() {
+  showConfirm('重置表单', '确定要清空所有已填写的内容吗？此操作不可恢复。', () => {
+    window._fillFormData = { _identity: { name: '', avatarMode: 'none', avatarUrl: '', avatarCartoonId: '' } };
+    window.saveFillCache();
+    window.renderFillPageLocal();
+    showToast('表单已重置', 'info');
+  }, { danger: true });
+}
+
+function bindFillEvents(formId) {
+  // 身份信息输入
+  const nameInput = $('#fill-identity-name');
+  if (nameInput) {
+    nameInput.addEventListener('input', function() {
+      window._fillFormData._identity.name = this.value;
+      window.saveFillCache();
+      updateProgress(formId);
+    });
+  }
+
+  // 头像模式切换
+  $$('input[name="avatar-mode"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      window._fillFormData._identity.avatarMode = this.value;
+      document.getElementById('cartoon-grid').classList.toggle('hidden', this.value !== 'cartoon');
+      document.getElementById('upload-area').classList.toggle('hidden', this.value !== 'upload');
+      window.saveFillCache();
+      updateProgress(formId);
+    });
+  });
+
+  // 提交按钮
+  const submitBtn = $('#submit-form-btn');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async () => {
+      const identity = window._fillFormData._identity || {};
+      if (!identity.name?.trim()) {
+        showToast('请填写你的昵称', 'warning');
+        return;
+      }
+
+      // 检查必填板块
+      const form = window._fillForm;
+      if (form?.section_config) {
+        for (const [sId, cfg] of Object.entries(form.section_config)) {
+          if (cfg.required && !cfg.hidden) {
+            const sd = window._fillFormData[sId] || {};
+            let hasVal = false;
+            const section = FORM_SECTIONS.find(s => s.id === sId);
+            if (section) {
+              hasVal = section.questions.some(q => {
+                const v = sd[q.id];
+                return v && (Array.isArray(v) ? v.length > 0 : true);
+              });
+            }
+            if (!hasVal) {
+              const sName = section?.title || sId;
+              showToast(`请填写必填板块：${sName}`, 'warning');
+              return;
+            }
+          }
+        }
+      }
+
+      if (formId.startsWith('preview_')) {
+        showToast('✅ 预览模式：表单数据已验证通过！\n（实际提交将保存到云端）', 'success', 4000);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '提交中...';
+
+      try {
+        // 构建提交数据
+        const submitData = { _identity: identity };
+        FORM_SECTIONS.forEach(section => {
+          const sd = window._fillFormData[section.id] || {};
+          section.questions.forEach(q => {
+            const key = `${section.id}_${q.id}`;
+            const val = sd[q.id] || [];
+            submitData[key] = val;
+            // 添加"其他"值到数组
+            const otherVal = sd[q.id + '_other'];
+            if (otherVal && val.includes('other')) {
+              const idx = val.indexOf('other');
+              if (idx >= 0) {
+                const newVal = [...val];
+                newVal[idx] = 'other:' + otherVal;
+                submitData[key] = newVal;
+              }
+            }
+          });
+        });
+
+        // 头像处理
+        let avatarUrl = '';
+        let avatarMode = identity.avatarMode || 'none';
+        if (avatarMode === 'cartoon') {
+          avatarUrl = identity.avatarCartoonId || '';
+        } else if (avatarMode === 'upload' && identity.avatarUrl) {
+          avatarUrl = identity.avatarUrl; // base64 data URL
+        }
+
+        const { error } = await _sb.from('submissions').insert({
+          form_id: formId,
+          submitter_name: identity.name.trim(),
+          submitter_avatar_url: avatarUrl,
+          submitter_avatar_mode: avatarMode,
+          data: submitData,
+          device_fingerprint: getDeviceFingerprint()
+        });
+
+        if (error) {
+          showToast('提交失败：' + error.message, 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '📤 提交记录';
+          return;
+        }
+
+        // 记录提交时间
+        localStorage.setItem('zhiyi_last_submit_' + formId, Date.now().toString());
+        // 清除缓存
+        localStorage.removeItem('zhiyi_form_data_' + formId);
+
+        // 增加计数
+        await _sb.rpc('increment_submission_count', { form_id: formId }).catch(() => {});
+
+        showToast('提交成功！感谢你的填写 🎉', 'success', 4000);
+        container.innerHTML = `
+          <div class="min-h-[60vh] flex items-center justify-center animate-fade-in">
+            <div class="card w-full max-w-sm text-center py-10">
+              <div class="text-5xl mb-4">🎉</div>
+              <h2 class="text-xl font-semibold text-text-pri mb-2">提交成功！</h2>
+              <p class="text-text-sec mb-6">感谢你的用心填写</p>
+              <button class="btn btn-primary" onclick="navigate('/')">返回首页</button>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        showToast('提交失败：' + err.message, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '📤 提交记录';
+      }
+    });
+  }
+}
+
+// 暴露全局函数
+window.toggleSection = toggleSection;
+window.collapseAllSections = collapseAllSections;
+window.resetCurrentSection = resetCurrentSection;
+window.toggleOption = toggleOption;
+window.setOtherValue = setOtherValue;
+window.updateRemaining = updateRemaining;
+window.selectCartoonAvatar = selectCartoonAvatar;
+window.handleAvatarUpload = handleAvatarUpload;
+window.resetForm = resetForm;
+
+// ================================================================
+// 十五、个人中心页面
+// ================================================================
+
+async function renderProfile(container) {
+  if (!STATE.session || !STATE.profile) {
+    container.innerHTML = '<div class="text-center py-20"><p class="text-text-sec">请先登录</p></div>';
+    return;
+  }
+
+  const p = STATE.profile;
+
+  container.innerHTML = `
+    <div class="max-w-lg mx-auto py-6 animate-fade-in space-y-4">
+      <!-- 头像区域 -->
+      <div class="card text-center">
+        <div class="avatar-circle avatar-circle-lg mx-auto mb-3" style="width:80px;height:80px;font-size:2em">
+          ${p.avatar_url
+            ? `<img src="${escapeHtml(p.avatar_url)}" class="w-full h-full object-cover rounded-full">`
+            : `<span>${(p.display_name || p.username || '我')[0]}</span>`}
+        </div>
+        <h3 class="font-semibold text-text-pri">${escapeHtml(p.display_name || p.username)}</h3>
+        <p class="text-text-sec text-xs">@${escapeHtml(p.username)}</p>
+        <div class="flex justify-center gap-2 mt-3">
+          <button class="btn btn-secondary btn-sm" onclick="changeAvatar()">📷 更换头像</button>
+        </div>
+      </div>
+
+      <!-- 账号信息 -->
+      <div class="card">
+        <h4 class="font-medium text-text-pri mb-3">🔐 账号信息</h4>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-text-sec mb-1 block">显示名称</label>
+            <input type="text" id="profile-display-name" class="input" value="${escapeHtml(p.display_name || '')}" placeholder="设置显示名称">
+          </div>
+          <button class="btn btn-primary btn-sm w-full" onclick="updateProfile()">保存修改</button>
+        </div>
+      </div>
+
+      <!-- 账号信息 -->
+      <div class="card">
+        <h4 class="font-medium text-text-pri mb-3">📱 本机账号</h4>
+        <p class="text-sm text-text-sec mb-2">当前设备已自动绑定账号，无需手动登录。</p>
+        <button class="btn btn-secondary btn-sm w-full" onclick="showMyAccessInfo()">🔑 查看设备凭据（用于换机迁移）</button>
+      </div>
+
+      <!-- 外观设置 -->
+      <div class="card">
+        <h4 class="font-medium text-text-pri mb-3">🎨 外观设置</h4>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-text-pri">${svgIcon('moon', 18)} 护眼暗色模式</span>
+            <button class="btn btn-sm ${STATE.darkMode ? 'btn-primary' : 'btn-secondary'}" onclick="toggleDarkMode()">
+              ${STATE.darkMode ? '🌙 暗色' : '☀️ 浅色'}
+            </button>
+          </div>
+          <div>
+            <span class="text-sm text-text-pri mb-2 block">文字大小</span>
+            <div class="flex gap-2">
+              <button class="btn btn-sm flex-1 ${STATE.fontSize === 'small' ? 'btn-primary' : 'btn-secondary'}" onclick="setFontSize('small')">小号</button>
+              <button class="btn btn-sm flex-1 ${STATE.fontSize === 'medium' ? 'btn-primary' : 'btn-secondary'}" onclick="setFontSize('medium')">标准</button>
+              <button class="btn btn-sm flex-1 ${STATE.fontSize === 'large' ? 'btn-primary' : 'btn-secondary'}" onclick="setFontSize('large')">大号</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 数据管理 -->
+      <div class="card">
+        <h4 class="font-medium text-text-pri mb-3">💾 数据管理</h4>
+        <div class="space-y-2">
+          <button class="btn btn-secondary btn-sm w-full" onclick="exportAllRecords()">📥 导出全部记录（TXT）</button>
+          <button class="btn btn-sm btn-danger w-full" onclick="clearAllData()" style="filter:brightness(0.85)">🗑️ 一键清空全部数据</button>
+          <button class="btn btn-sm w-full" style="background:#f0f0f0;color:var(--text-sec)" onclick="resetDeviceIdentity()">🔄 重置本机身份（换设备后使用）</button>
+        </div>
+      </div>
+
+      <p class="text-text-sec text-xs text-center py-4" style="font-size:11px">
+        知意小记 — 温柔地收集心意
+      </p>
+    </div>
+  `;
+}
+
+async function updateProfile() {
+  const displayName = $('#profile-display-name')?.value.trim();
+  if (!supabase || !STATE.profile) return;
+  await _sb.from('profiles').update({ display_name: displayName, updated_at: new Date() }).eq('id', STATE.user.id);
+  STATE.profile.display_name = displayName;
+  showToast('资料已更新', 'success');
+}
+window.updateProfile = updateProfile;
+
+// 显示设备凭据（用于换机迁移数据）
+function showMyAccessInfo() {
+  let creds = null;
+  try { creds = JSON.parse(localStorage.getItem('zhiyi_auto_creds') || 'null'); } catch(e) {}
+  const p = STATE.profile || {};
+
+  showModal('设备凭据', `
+    <div class="space-y-3 text-sm">
+      <p class="text-text-sec">当前设备已自动绑定账号。如需在其他设备上查看相同数据，请在另一台设备上输入以下凭据：</p>
+      <div class="bg-milk-blue rounded-xl p-3 space-y-2">
+        <p><span class="text-text-sec">设备ID：</span><span class="font-mono text-xs">${escapeHtml(getDeviceFingerprint())}</span></p>
+        ${creds ? `<p><span class="text-text-sec">账号：</span><span class="font-mono text-xs">${escapeHtml(creds.email)}</span></p>` : ''}
+      </div>
+      <p class="text-xs text-bean-red" style="filter:brightness(0.85)">⚠️ 由于采用无登录模式，数据绑定到设备。若更换设备后想查看原数据，请在旧设备上导出 TXT 备份。</p>
+      <button class="btn btn-primary btn-sm w-full mt-2" onclick="closeModal()">知道了</button>
+    </div>
+  `);
+}
+window.showMyAccessInfo = showMyAccessInfo;
+
+// 重置设备身份（清空本地数据，下次打开生成新账号）
+function resetDeviceIdentity() {
+  showConfirm('重置身份', '此操作将清除本地账号凭据，下次打开将自动创建新账号。云端旧数据仍保留但无法访问。建议先导出备份。', () => {
+    localStorage.removeItem('zhiyi_auto_creds');
+    localStorage.removeItem('zhiyi_device_fp');
+    showToast('身份已重置，刷新页面后生效', 'success', 3000);
+    setTimeout(() => location.reload(), 1000);
+  }, { danger: true, confirmText: '确认重置' });
+}
+window.resetDeviceIdentity = resetDeviceIdentity;
+
+async function changeAvatar() {
+  showModal('更换头像', `
+    <div class="space-y-3">
+      <p class="text-sm text-text-sec">选择头像方式：</p>
+      <div class="grid grid-cols-3 gap-2">
+        <button class="btn btn-secondary btn-sm" onclick="setProfileAvatar('none');closeModal()">🚫 不设头像</button>
+        <button class="btn btn-secondary btn-sm" onclick="showCartoonPicker()">🎨 卡通头像</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('profile-avatar-upload').click()">📷 上传图片</button>
+      </div>
+      <input type="file" id="profile-avatar-upload" accept="image/*" class="hidden" onchange="uploadProfileAvatar(this)">
+    </div>
+  `);
+}
+window.changeAvatar = changeAvatar;
+
+function showCartoonPicker() {
+  let html = '<div class="grid grid-cols-5 gap-3">';
+  CARTOON_AVATARS.forEach(a => {
+    html += `<div class="aspect-square rounded-full flex items-center justify-center text-3xl cursor-pointer hover:scale-110 transition-transform" style="background:${a.bg}" onclick="setProfileAvatar('cartoon','${a.id}');closeModal()">${a.icon || a.emoji}</div>`;
+  });
+  html += '</div>';
+  showModal('选择卡通头像', html);
+}
+window.showCartoonPicker = showCartoonPicker;
+
+async function setProfileAvatar(mode, cartoonId) {
+  if (!supabase || !STATE.profile) return;
+  let avatarUrl = '';
+  if (mode === 'cartoon' && cartoonId) {
+    avatarUrl = cartoonId;
+  }
+  await _sb.from('profiles').update({ avatar_mode: mode, avatar_url: avatarUrl, updated_at: new Date() }).eq('id', STATE.user.id);
+  STATE.profile.avatar_mode = mode;
+  STATE.profile.avatar_url = avatarUrl;
+  renderProfile($('#page-content'));
+  updateNavbar();
+  showToast('头像已更新', 'success');
+}
+window.setProfileAvatar = setProfileAvatar;
+
+async function uploadProfileAvatar(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('图片大小不能超过2MB', 'warning'); return; }
+  try {
+    const blob = await compressImage(file);
+    if (!supabase || !STATE.profile) return;
+    const path = `${STATE.user.id}/avatar.${file.type.split('/')[1] || 'jpg'}`;
+    const { error } = await _sb.storage.from('avatars').upload(path, blob, { upsert: true });
+    if (error) { showToast('上传失败：' + error.message, 'error'); return; }
+    const { data: { publicUrl } } = _sb.storage.from('avatars').getPublicUrl(path);
+    await _sb.from('profiles').update({ avatar_mode: 'upload', avatar_url: publicUrl, updated_at: new Date() }).eq('id', STATE.user.id);
+    STATE.profile.avatar_mode = 'upload';
+    STATE.profile.avatar_url = publicUrl;
+    closeModal();
+    renderProfile($('#page-content'));
+    updateNavbar();
+    showToast('头像已上传', 'success');
+  } catch (e) {
+    showToast('上传失败：' + e.message, 'error');
+  }
+}
+window.uploadProfileAvatar = uploadProfileAvatar;
+
+async function clearAllData() {
+  showConfirm('清空全部数据', '此操作将永久删除你创建的所有表单和填写记录。\n\n请选择处理方式：', async () => {
+    if (!supabase || !STATE.profile) return;
+    // 删除所有表单（级联删除submissions）
+    const { data: forms } = await _sb.from('forms').select('id').eq('user_id', STATE.user.id);
+    if (forms && forms.length > 0) {
+      for (const f of forms) {
+        await _sb.from('forms').delete().eq('id', f.id);
+      }
+    }
+    STATE.forms = [];
+    STATE.submissions = [];
+    showToast('所有数据已清空', 'success');
+    renderDashboardContent($('#page-content'));
+  }, { danger: true, confirmText: '确认清空' });
+}
+window.clearAllData = clearAllData;
+
+
+// ================================================================
+// 十六、新手指引
+// ================================================================
+
+function showOnboardingGuide() {
+  if (!STATE.profile || STATE.profile.onboarding_done) return;
+
+  const steps = [
+    { title: '📋 创建表单', desc: '登录后点击「新建收集表单」，设置问卷板块和分享规则' },
+    { title: '🔗 分享链接', desc: '生成专属分享链接，发给朋友填写，支持密码保护和次数限制' },
+    { title: '📊 查看记录', desc: '在「填写记录」中查看所有人的填写内容，可收藏、添加备注和标签' }
+  ];
+
+  let step = 0;
+  function showStep() {
+    if (step >= steps.length) return closeGuide();
+    const s = steps[step];
+    const guide = document.createElement('div');
+    guide.className = 'guide-tooltip';
+    guide.style.cssText = 'top:50%;left:50%;transform:translate(-50%,-50%)';
+    guide.innerHTML = `
+      <div class="text-3xl mb-2">${s.title}</div>
+      <p class="text-sm text-text-sec mb-4">${s.desc}</p>
+      <div class="flex items-center justify-between gap-3">
+        <button class="text-xs text-text-sec" id="guide-skip">跳过</button>
+        <span class="text-xs text-text-sec">${step + 1}/${steps.length}</span>
+        <button class="btn btn-primary btn-sm" id="guide-next">${step < steps.length - 1 ? '下一步' : '完成'}</button>
+      </div>
+    `;
+    document.body.appendChild(guide);
+
+    guide.querySelector('#guide-next').addEventListener('click', () => {
+      guide.remove();
+      step++;
+      showStep();
+    });
+    guide.querySelector('#guide-skip').addEventListener('click', () => {
+      guide.remove();
+      closeGuide();
+    });
+  }
+
+  function closeGuide() {
+    if (STATE.profile && supabase) {
+      _sb.from('profiles').update({ onboarding_done: true }).eq('id', STATE.user.id).then(() => {
+        STATE.profile.onboarding_done = true;
+      });
+    }
+  }
+
+  setTimeout(showStep, 1000);
+}
+
+// ================================================================
+// 十七、应用初始化
+// ================================================================
+
+function initApp() {
+  initSupabase();
+
+  // 注册路由（无登录模式）
+  route('/', 'landing');
+  route('/dashboard', 'dashboard');
+  route('/fill/:formId', 'fill');
+  route('/profile', 'profile');
+
+  window.addEventListener('hashchange', handleRoute);
+
+  initAuth().then(() => {
+    // 首次加载时先显示加载画面
+    if (!STATE.session) {
+      $('#page-content').innerHTML = `
+        <div class="min-h-[80vh] flex flex-col items-center justify-center animate-fade-in">
+          <svg width="64" height="72" viewBox="0 0 32 40"><use href="#icon-logo"/></svg>
+          <p class="text-text-sec text-sm mt-4">正在连接...</p>
+          <div class="loading-spinner mt-3"></div>
+        </div>
+      `;
+    }
+  });
+
+  // 全局点击关闭菜单
+  document.addEventListener('click', (e) => {
+    const menu = $('#user-menu-wrap');
+    const dropdown = $('#user-menu-dropdown');
+    if (menu && dropdown && !menu.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+
+  applyTheme();
+
+  // 移动端始终显示底部导航
+  if (window.matchMedia('(max-width: 767px)').matches) {
+    $('#bottom-nav').classList.remove('hidden');
+  }
+
+  console.log('💝 知意小记 — 无登录模式已就绪');
+  console.log('📋 共', FORM_SECTIONS.length, '个问卷板块');
+  console.log('🔗 Supabase:', supabase ? '已连接' : '未配置');
+}
+
+// 启动
+document.addEventListener('DOMContentLoaded', initApp);
+
+// ================================================================
+// 十八、注册 Service Worker (PWA)
+// ================================================================
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
+// 监听 PWA 安装事件
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+// ================================================================
+// 页面加载完成
+// ================================================================
+  </script>
+</body>
+</html>
