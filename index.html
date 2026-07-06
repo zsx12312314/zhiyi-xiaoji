@@ -3008,9 +3008,16 @@ async function renderFormFill(container, params) {
   const isPreview = formId?.startsWith('preview_');
 
   let form = null;
-  if (!isPreview && supabase) {
-    const { data } = await _sb.from('forms').select('*').eq('id', formId).single();
-    form = data;
+  if (!isPreview && _sb) {
+    try {
+      const { data, error } = await _sb.from('forms').select('*').eq('id', formId).maybeSingle();
+      if (error) throw error;
+      form = data;
+    } catch(e) {
+      console.error('Load form error:', e);
+      container.innerHTML = `<div class="text-center py-20"><p class="text-text-sec">表单加载失败：${escapeHtml(e.message||'网络错误')}</p><p class="text-xs text-text-sec mt-2">FormId: ${escapeHtml(formId)}</p><button class="btn btn-primary mt-4" onclick="location.reload()">重试</button></div>`;
+      return;
+    }
   }
 
   // 预览模式：构建虚拟表单
@@ -3879,8 +3886,14 @@ function initApp() {
 
   window.addEventListener('hashchange', handleRoute);
 
+  // 访客填写页：跳过认证，直接渲染
+  if (window.location.hash.includes('#/fill/')) {
+    handleRoute();
+    return;
+  }
+
+  // 其他页面：自动登录后渲染
   initAuth().then(() => {
-    // 首次加载时先显示加载画面
     if (!STATE.session) {
       $('#page-content').innerHTML = `
         <div class="min-h-[80vh] flex flex-col items-center justify-center animate-fade-in">
