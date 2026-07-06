@@ -12,24 +12,10 @@
   <link rel="icon" href="data:image/svg+xml,<!-- ICON_PLACEHOLDER -->" type="image/svg+xml">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<!-- ICON_PLACEHOLDER -->">
   <title>知意小记</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="tailwind.css">
   <!-- 国内备用CDN -->
-  <script>if(typeof tailwind==='undefined'){document.write('<script src="https://unpkg.com/tailwindcss-cdn@3.4.1/tailwindcss.js"><\/script>')}</script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            'milk-blue': '#E8F2FC',
-            'apricot': '#FFF5EB',
-            'bean-red': '#F4C2C2',
-            'text-pri': '#333333',
-            'text-sec': '#777777',
-          }
-        }
-      }
-    }
-  </script>
+  
+  
   <script src="supabase.min.js"></script>
   <script src="qrcode.min.js"></script>
   <style>
@@ -2428,18 +2414,11 @@ async function showCreateFormModal(templateConfig = null) {
 window.showCreateFormModal = showCreateFormModal;
 
 // ---- 分享弹窗 ----
+const PUBLIC_URL = 'https://zsx12312314.github.io/zhiyi-xiaoji/';
 async function showShareModal(form) {
-  // 自动检测局域网 IP（解决 127.0.0.1 只能本机访问的问题）
-  let baseUrl = window.location.origin + window.location.pathname;
-  try {
-    const resp = await fetch('/lan-ip');
-    if (resp.ok) {
-      const lanIp = (await resp.text()).trim();
-      if (lanIp && lanIp !== '127.0.0.1') {
-        baseUrl = `http://${lanIp}:${window.location.port}${window.location.pathname}`;
-      }
-    }
-  } catch(e) {}
+  // 优先用公网地址，任何人任何地方都能打开
+  let baseUrl = PUBLIC_URL;
+  let shareHint = '';
 
   const shareUrl = `${baseUrl}#/fill/${form.id}`;
   const hasPassword = !!form.access_password_hash;
